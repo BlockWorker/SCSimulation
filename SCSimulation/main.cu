@@ -1,5 +1,4 @@
-﻿#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+﻿#include "cuda_base.cuh"
 
 #include <iostream>
 #include <chrono>
@@ -21,7 +20,7 @@ __global__ void test(size_t* sizes) {
 
 int main() {
 
-	cudaSetDevice(0);
+	cu(cudaSetDevice(0));
 
 	/*
 	size_t sizes_h[2];
@@ -38,7 +37,7 @@ int main() {
 	auto n3 = StochasticNumber::generate_unipolar(SN_LENGTH, 0.6);
 	auto n4 = StochasticNumber::generate_unipolar(SN_LENGTH, 0.8);
 	auto s1 = StochasticNumber::generate_unipolar(SN_LENGTH, 0.5);
-	auto s2 = StochasticNumber::generate_unipolar(SN_LENGTH, 0.25);
+	auto s2 = StochasticNumber::generate_unipolar(SN_LENGTH, 0.5);
 
 	n1->print_unipolar(MAX_PRINT);
 	n2->print_unipolar(MAX_PRINT);
@@ -79,7 +78,7 @@ int main() {
 	factory->set_host_only(false);
 	factory->set_sim_length(SN_LENGTH);
 
-	constexpr uint32_t sample_count = 1000;
+	constexpr uint32_t sample_count = 500;
 
 	uint32_t in[sample_count + 1], out[sample_count + 1];
 	for (uint32_t i = 0; i <= sample_count; i++) {
@@ -88,7 +87,11 @@ int main() {
 		factory->add_component(new Stanh(in[i], out[i], 6));
 	}
 
+	auto beging = std::chrono::steady_clock::now();
 	auto circuit = factory->create_circuit();
+	auto endg = std::chrono::steady_clock::now();
+
+	std::cout << "Circuit creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(endg - beging).count() << " ms" << std::endl;
 
 	auto numbers = (StochasticNumber**)malloc((sample_count + 1) * sizeof(StochasticNumber*));
 	auto vals = (double*)malloc((sample_count + 1) * sizeof(double));

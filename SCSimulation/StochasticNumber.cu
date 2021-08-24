@@ -1,6 +1,4 @@
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-#include "curand.h"
+#include "curand_base.cuh"
 
 #include <stdlib.h>
 #include <algorithm>
@@ -58,7 +56,7 @@ StochasticNumber::StochasticNumber(uint32_t length) : length(length), word_lengt
 StochasticNumber::StochasticNumber(uint32_t length, uint32_t* data, bool device_data) : length(length), word_length((length + 31) / 32) {
 	this->data = (uint32_t*)malloc(word_length * sizeof(uint32_t));
 	if (this->data != nullptr) {
-		if (device_data) cudaMemcpy(this->data, data, word_length * sizeof(uint32_t), cudaMemcpyDeviceToHost);
+		if (device_data) cu(cudaMemcpy(this->data, data, word_length * sizeof(uint32_t), cudaMemcpyDeviceToHost));
 		else memcpy(this->data, data, word_length * sizeof(uint32_t));
 	}
 }
@@ -111,16 +109,16 @@ void StochasticNumber::generate_multiple_curand(StochasticNumber** numbers, uint
 	uint32_t* sn_dev;
 	size_t sn_dev_pitch;
 
-	cudaMalloc(&rand_dev, count * length * sizeof(double));
-	cudaMalloc(&val_dev, count * sizeof(double));
-	cudaMallocPitch(&sn_dev, &sn_dev_pitch, word_length * sizeof(uint32_t), count);
+	cu(cudaMalloc(&rand_dev, count * length * sizeof(double)));
+	cu(cudaMalloc(&val_dev, count * sizeof(double)));
+	cu(cudaMallocPitch(&sn_dev, &sn_dev_pitch, word_length * sizeof(uint32_t), count));
 
-	cudaMemcpy(val_dev, values_unipolar, count * sizeof(double), cudaMemcpyHostToDevice);
+	cu(cudaMemcpy(val_dev, values_unipolar, count * sizeof(double), cudaMemcpyHostToDevice));
 
 	curandGenerator_t gen;
-	curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT);
-	curandSetPseudoRandomGeneratorSeed(gen, std::random_device()());
-	curandGenerateUniformDouble(gen, rand_dev, count * length);
+	cur(curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT));
+	cur(curandSetPseudoRandomGeneratorSeed(gen, std::random_device()()));
+	cur(curandGenerateUniformDouble(gen, rand_dev, count * length));
 
 	auto block_size = __min(word_length, 256);
 	dim3 grid_size(count, (word_length + block_size - 1) / block_size);
@@ -131,6 +129,10 @@ void StochasticNumber::generate_multiple_curand(StochasticNumber** numbers, uint
 		auto data_ptr = (uint32_t*)((char*)sn_dev + (i * sn_dev_pitch));
 		numbers[i] = new StochasticNumber(length, data_ptr, true);
 	}
+
+	cu(cudaFree(rand_dev));
+	cu(cudaFree(val_dev));
+	cu(cudaFree(sn_dev));
 }
 
 const uint32_t* StochasticNumber::get_data() const {

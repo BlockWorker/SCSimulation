@@ -36,6 +36,8 @@ private:
 	uint32_t num_seq_comp;
 	std::vector<CircuitComponent*> components;
 	std::vector<bool> driven_nets;
+	size_t max_component_size;
+	size_t max_component_align;
 
 	uint32_t add_component_internal(CircuitComponent* component);
 

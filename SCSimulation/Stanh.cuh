@@ -1,7 +1,6 @@
 ﻿#pragma once
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+#include "cuda_base.cuh"
 #include <stdint.h>
 #include <memory.h>
 
@@ -11,7 +10,7 @@
 class Stanh : public SequentialComponent
 {
 public:
-	Stanh(uint32_t input, uint32_t output, uint32_t k) : SequentialComponent(1, 1, 1, typehash(Stanh), sizeof(Stanh)), k(k) {
+	Stanh(uint32_t input, uint32_t output, uint32_t k) : SequentialComponent(1, 1, 1, typehash(Stanh), sizeof(Stanh), alignof(Stanh)), k(k) {
 		inputs[0] = input;
 		outputs[0] = output;
 	}
@@ -19,12 +18,14 @@ public:
 	link_device_sim_function(Stanh)
 
 	virtual void reset_state() override {
-		state_host[0] = k / 2;
+		state_ptr()[0] = k / 2;
 	}
 
 	virtual void simulate_step_host() override {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset = input_offsets_host[0];
+
+		auto state = state_ptr();
 
 		uint32_t out_word = circuit->net_values_host[out_offset + current_progress_word] >> (current_progress % 32);
 
@@ -39,12 +40,12 @@ public:
 				}
 
 				out_word <<= 1;
-				putbit(out_word, state_host[0] >= k / 2);
+				putbit(out_word, state[0] >= k / 2);
 
 				auto in_bit = takebit(in_word);
 				in_word <<= 1;
-				if (in_bit && state_host[0] < k - 1) state_host[0]++;
-				else if (!in_bit && state_host[0] > 0) state_host[0]--;
+				if (in_bit && state[0] < k - 1) state[0]++;
+				else if (!in_bit && state[0] > 0) state[0]--;
 			}
 			circuit->net_values_host[out_offset + i] = out_word;
 			out_word = 0;
@@ -55,6 +56,8 @@ public:
 		auto g = (Stanh*)comp;
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset = g->input_offsets_dev[0];
+
+		auto state = g->state_ptr();
 
 		uint32_t out_word = g->net_values_dev[out_offset + g->current_progress_word] >> (g->current_progress % 32);
 
@@ -69,12 +72,12 @@ public:
 				}
 
 				out_word <<= 1;
-				putbit(out_word, g->state_dev[0] >= g->k / 2);
+				putbit(out_word, state[0] >= g->k / 2);
 
 				auto in_bit = takebit(in_word);
 				in_word <<= 1;
-				if (in_bit && g->state_dev[0] < g->k - 1) g->state_dev[0]++;
-				else if (~in_bit && g->state_dev[0] > 0) g->state_dev[0]--;
+				if (in_bit && state[0] < g->k - 1) state[0]++;
+				else if (~in_bit && state[0] > 0) state[0]--;
 			}
 			g->net_values_dev[out_offset + i] = out_word;
 			out_word = 0;

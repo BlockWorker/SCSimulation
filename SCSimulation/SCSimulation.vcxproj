@@ -87,8 +87,6 @@
     <CudaCompile Include="CircuitComponent.cu" />
     <CudaCompile Include="CircuitComponent.cuh" />
     <CudaCompile Include="CombinatorialComponent.cuh" />
-    <CudaCompile Include="DeviceSim.cu" />
-    <CudaCompile Include="example_kernel.cu" />
     <CudaCompile Include="main.cu" />
     <CudaCompile Include="SequentialComponent.cu" />
     <CudaCompile Include="StochasticCircuit.cu" />
@@ -97,7 +95,6 @@
     <CudaCompile Include="StochasticNumber.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ComponentTypes.h" />
     <ClInclude Include="libpopcnt.h" />
     <ClInclude Include="Range.h" />
     <ClInclude Include="SequentialComponent.cuh" />

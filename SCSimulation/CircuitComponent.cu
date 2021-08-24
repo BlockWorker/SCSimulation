@@ -4,7 +4,8 @@
 #include "CircuitComponent.cuh"
 #include "StochasticCircuit.cuh"
 
-CircuitComponent::CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size) : component_type(type), mem_obj_size(size), num_inputs(num_inputs), num_outputs(num_outputs) {
+CircuitComponent::CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size, size_t align) : component_type(type), mem_obj_size(size), mem_align(align),
+	num_inputs(num_inputs), num_outputs(num_outputs) {
 	circuit = nullptr;
 	net_values_dev = nullptr;
 	dev_ptr = nullptr;
@@ -27,9 +28,8 @@ CircuitComponent::~CircuitComponent() {
 	free(input_offsets_host);
 	free(output_offsets_host);
 	if (!circuit->host_only) {
-		cudaFree(dev_ptr);
-		cudaFree(input_offsets_dev);
-		cudaFree(output_offsets_dev);
+		cu(cudaFree(input_offsets_dev));
+		cu(cudaFree(output_offsets_dev));
 	}
 }
 
@@ -51,16 +51,6 @@ uint32_t CircuitComponent::next_sim_progress_word() const {
 
 StochasticCircuit* CircuitComponent::get_circuit() const {
 	return circuit;
-}
-
-void CircuitComponent::copy_to_device() {
-	if (dev_ptr != nullptr) cudaMemcpy(dev_ptr, this, mem_obj_size, cudaMemcpyHostToDevice);
-	copy_state_host_to_device();
-}
-
-void CircuitComponent::copy_from_device() {
-	if (dev_ptr != nullptr) cudaMemcpy(this, dev_ptr, mem_obj_size, cudaMemcpyDeviceToHost);
-	copy_state_device_to_host();
 }
 
 void CircuitComponent::calculate_simulation_progress() {
@@ -114,8 +104,8 @@ void CircuitComponent::calculate_io_offsets() {
 	}
 
 	if (!circuit->host_only) {
-		cudaMemcpy(input_offsets_dev, dev_in, num_inputs * sizeof(size_t), cudaMemcpyHostToDevice);
-		cudaMemcpy(output_offsets_dev, dev_out, num_outputs * sizeof(size_t), cudaMemcpyHostToDevice);
+		cu(cudaMemcpy(input_offsets_dev, dev_in, num_inputs * sizeof(size_t), cudaMemcpyHostToDevice));
+		cu(cudaMemcpy(output_offsets_dev, dev_out, num_outputs * sizeof(size_t), cudaMemcpyHostToDevice));
 	}
 
 	free(dev_in);
@@ -126,12 +116,8 @@ void CircuitComponent::init_with_circuit(StochasticCircuit* circuit) {
 	this->circuit = circuit;
 	if (!circuit->host_only) {
 		net_values_dev = circuit->net_values_dev;
-		cudaMalloc(&dev_ptr, mem_obj_size);
-		cudaMalloc(&input_offsets_dev, num_inputs * sizeof(size_t));
-		cudaMalloc(&output_offsets_dev, num_outputs * sizeof(size_t));
-		copy_to_device();
-		link_devstep();
-		copy_from_device();
+		cu(cudaMalloc(&input_offsets_dev, num_inputs * sizeof(size_t)));
+		cu(cudaMalloc(&output_offsets_dev, num_outputs * sizeof(size_t)));
 	}
 
 	calculate_io_offsets();

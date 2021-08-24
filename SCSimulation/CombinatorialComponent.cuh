@@ -8,7 +8,7 @@
 class CombinatorialComponent : public CircuitComponent
 {
 public:
-	CombinatorialComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size) : CircuitComponent(num_inputs, num_outputs, type & 0x7fffffffu, size) { }
+	CombinatorialComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size, size_t align) : CircuitComponent(num_inputs, num_outputs, type & 0x7fffffffu, size, align) { }
 	virtual ~CombinatorialComponent() { }
 
 	virtual void reset_state() override final { }

@@ -1,7 +1,6 @@
 ﻿#pragma once
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+#include "cuda_base.cuh"
 #include <stdint.h>
 #include <utility>
 #include <typeinfo>
@@ -28,7 +27,7 @@ public:
 
 	void (*simulate_step_dev_ptr)(CircuitComponent*);
 
-	CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size);
+	CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size, size_t align);
 	virtual ~CircuitComponent();
 
 	uint32_t current_sim_progress() const;
@@ -37,10 +36,10 @@ public:
 	uint32_t next_sim_progress_word() const;
 	StochasticCircuit* get_circuit() const;
 
-	void copy_to_device();
-	void copy_from_device();
-
 	virtual void reset_state() = 0;
+
+	virtual void copy_state_host_to_device() = 0;
+	virtual void copy_state_device_to_host() = 0;
 
 	void calculate_simulation_progress();
 	virtual void simulate_step_host() = 0;
@@ -55,6 +54,7 @@ protected:
 	StochasticCircuit* circuit;
 
 	const size_t mem_obj_size;
+	const size_t mem_align;
 	CircuitComponent* dev_ptr;
 	uint32_t* net_values_dev;
 
@@ -73,8 +73,5 @@ protected:
 	virtual void init_with_circuit(StochasticCircuit* circuit);
 
 	virtual void link_devstep() = 0;
-
-	virtual void copy_state_host_to_device() = 0;
-	virtual void copy_state_device_to_host() = 0;
 
 };

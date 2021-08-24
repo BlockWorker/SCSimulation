@@ -1,5 +1,4 @@
-﻿#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+﻿#include "cuda_base.cuh"
 
 #include <stdlib.h>
 #include <memory.h>
@@ -14,22 +13,31 @@ StochasticCircuit::StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uin
 	CircuitComponent** components) :
 	host_only(true), sim_length(sim_length), sim_length_words((sim_length + 31) / 32), num_nets(num_nets), net_values_host(net_values), net_values_host_pitch((sim_length + 31) / 32 * sizeof(uint32_t)),
 	net_values_dev(nullptr), net_values_dev_pitch(0), net_progress_host(net_progress), net_progress_dev(nullptr), num_components_comb(num_components_comb), num_components_seq(num_components_seq),
-	num_components(num_components_comb + num_components_seq), components_host(components), components_dev(nullptr) {
+	num_components(num_components_comb + num_components_seq), components_host(components), components_dev(nullptr), component_array_host(nullptr), component_array_host_pitch(0),
+	component_array_dev(nullptr), component_array_dev_pitch(0) {
 
 }
 
 StochasticCircuit::StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values_host, uint32_t* net_values_dev, size_t net_values_dev_pitch, uint32_t* net_progress_host, uint32_t* net_progress_dev,
-	uint32_t num_components_comb, uint32_t num_components_seq, CircuitComponent** components_host, CircuitComponent** components_dev) : 
+	uint32_t num_components_comb, uint32_t num_components_seq, CircuitComponent** components_host, CircuitComponent** components_dev, char* component_array_host, size_t component_array_host_pitch,
+	char* component_array_dev, size_t component_array_dev_pitch) :
 	host_only(false), sim_length(sim_length), sim_length_words((sim_length + 31) / 32), num_nets(num_nets), net_values_host(net_values_host), 
 	net_values_host_pitch((sim_length + 31) / 32 * sizeof(uint32_t)), net_values_dev(net_values_dev), net_values_dev_pitch(net_values_dev_pitch), net_progress_host(net_progress_host), 
 	net_progress_dev(net_progress_dev), num_components_comb(num_components_comb), num_components_seq(num_components_seq), num_components(num_components_comb + num_components_seq),
-	components_host(components_host), components_dev(components_dev) {
+	components_host(components_host), components_dev(components_dev), component_array_host(component_array_host), component_array_host_pitch(component_array_host_pitch),
+	component_array_dev(component_array_dev), component_array_dev_pitch(component_array_dev_pitch) {
 
 }
 
 StochasticCircuit::~StochasticCircuit() {
-	for (uint32_t i = 0; i < num_components; i++) {
-		delete (components_host + i);
+	if (host_only) {
+		for (uint32_t i = 0; i < num_components; i++) {
+			delete (components_host + i);
+		}
+	} else {
+		for (uint32_t i = 0; i < num_components; i++) {
+			components_host[i]->~CircuitComponent();
+		}
 	}
 
 	free(net_values_host);
@@ -37,9 +45,11 @@ StochasticCircuit::~StochasticCircuit() {
 	free(components_host);
 
 	if (!host_only) {
-		cudaFree(net_values_dev);
-		cudaFree(net_progress_dev);
-		cudaFree(components_dev);
+		cu(cudaFree(net_values_dev));
+		cu(cudaFree(net_progress_dev));
+		cu(cudaFree(components_dev));
+		free(component_array_host);
+		cu(cudaFree(component_array_dev));
 	}
 }
 
@@ -72,19 +82,21 @@ void StochasticCircuit::set_net_value_bipolar(uint32_t net, double value) {
 void StochasticCircuit::copy_data_to_device() {
 	if (host_only) return;
 
-	cudaMemcpy2D(net_values_dev, net_values_dev_pitch, net_values_host, net_values_host_pitch, net_values_host_pitch, num_nets, cudaMemcpyHostToDevice);
-	cudaMemcpy(net_progress_dev, net_progress_host, num_nets * sizeof(uint32_t), cudaMemcpyHostToDevice);
+	cu(cudaMemcpy2D(net_values_dev, net_values_dev_pitch, net_values_host, net_values_host_pitch, net_values_host_pitch, num_nets, cudaMemcpyHostToDevice));
+	cu(cudaMemcpy(net_progress_dev, net_progress_host, num_nets * sizeof(uint32_t), cudaMemcpyHostToDevice));
+	cu(cudaMemcpy2D(component_array_dev, component_array_dev_pitch, component_array_host, component_array_host_pitch, component_array_host_pitch, num_components, cudaMemcpyHostToDevice));
 
-	for (uint32_t i = 0; i < num_components; i++) components_host[i]->copy_to_device();
+	for (uint32_t i = 0; i < num_components; i++) components_host[i]->copy_state_host_to_device();
 }
 
 void StochasticCircuit::copy_data_from_device() {
 	if (host_only) return;
 
-	cudaMemcpy2D(net_values_host, net_values_host_pitch, net_values_dev, net_values_dev_pitch, net_values_host_pitch, num_nets, cudaMemcpyDeviceToHost);
-	cudaMemcpy(net_progress_host, net_progress_dev, num_nets * sizeof(uint32_t), cudaMemcpyDeviceToHost);
+	cu(cudaMemcpy2D(net_values_host, net_values_host_pitch, net_values_dev, net_values_dev_pitch, net_values_host_pitch, num_nets, cudaMemcpyDeviceToHost));
+	cu(cudaMemcpy(net_progress_host, net_progress_dev, num_nets * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+	cu(cudaMemcpy2D(component_array_host, component_array_host_pitch, component_array_dev, component_array_dev_pitch, component_array_host_pitch, num_components, cudaMemcpyDeviceToHost));
 
-	for (uint32_t i = 0; i < num_components; i++) components_host[i]->copy_from_device();
+	for (uint32_t i = 0; i < num_components; i++) components_host[i]->copy_state_device_to_host();
 }
 
 void StochasticCircuit::simulate_circuit_host_only() {
@@ -148,8 +160,8 @@ void StochasticCircuit::simulate_circuit() {
 
 		if (!sim_comb.empty()) {
 			uint32_t* sim_comb_dev;
-			cudaMalloc(&sim_comb_dev, sim_comb.size() * sizeof(uint32_t));
-			cudaMemcpy(sim_comb_dev, sim_comb.data(), sim_comb.size() * sizeof(uint32_t), cudaMemcpyHostToDevice);
+			cu(cudaMalloc(&sim_comb_dev, sim_comb.size() * sizeof(uint32_t)));
+			cu(cudaMemcpy(sim_comb_dev, sim_comb.data(), sim_comb.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
 			uint32_t block_size = __min(comb_sim_words, 256);
 			dim3 grid_size(sim_comb.size(), (comb_sim_words + block_size - 1) / block_size);
 
@@ -157,7 +169,7 @@ void StochasticCircuit::simulate_circuit() {
 			exec_comb_sim_step<<<grid_size, block_size>>>(components_dev, sim_comb_dev);
 			copy_data_from_device();
 
-			cudaFree(sim_comb_dev);
+			cu(cudaFree(sim_comb_dev));
 
 			for (auto id : sim_comb) {
 				components_host[id]->sim_step_finished();
@@ -194,12 +206,12 @@ void StochasticCircuit::simulate_circuit() {
 			uint32_t* sim_seq_dev;
 			uint32_t* seq_type_counts_dev;
 			uint32_t* seq_type_offsets_dev;
-			cudaMalloc(&sim_seq_dev, sim_seq.size() * sizeof(uint32_t));
-			cudaMalloc(&seq_type_counts_dev, seq_type_counts.size() * sizeof(uint32_t));
-			cudaMalloc(&seq_type_offsets_dev, seq_type_offsets.size() * sizeof(uint32_t));
-			cudaMemcpy(sim_seq_dev, sim_seq.data(), sim_seq.size() * sizeof(uint32_t), cudaMemcpyHostToDevice);
-			cudaMemcpy(seq_type_counts_dev, seq_type_counts.data(), seq_type_counts.size() * sizeof(uint32_t), cudaMemcpyHostToDevice);
-			cudaMemcpy(seq_type_offsets_dev, seq_type_offsets.data(), seq_type_offsets.size() * sizeof(uint32_t), cudaMemcpyHostToDevice);
+			cu(cudaMalloc(&sim_seq_dev, sim_seq.size() * sizeof(uint32_t)));
+			cu(cudaMalloc(&seq_type_counts_dev, seq_type_counts.size() * sizeof(uint32_t)));
+			cu(cudaMalloc(&seq_type_offsets_dev, seq_type_offsets.size() * sizeof(uint32_t)));
+			cu(cudaMemcpy(sim_seq_dev, sim_seq.data(), sim_seq.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
+			cu(cudaMemcpy(seq_type_counts_dev, seq_type_counts.data(), seq_type_counts.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
+			cu(cudaMemcpy(seq_type_offsets_dev, seq_type_offsets.data(), seq_type_offsets.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
 
 			auto max_num_threads = *std::max_element(seq_type_counts.begin(), seq_type_counts.end());
 			uint32_t block_size = __min(max_num_threads, 256);
@@ -209,9 +221,9 @@ void StochasticCircuit::simulate_circuit() {
 			exec_seq_sim_step<<<grid_size, block_size>>>(components_dev, sim_seq_dev, seq_type_counts_dev, seq_type_offsets_dev);
 			copy_data_from_device();
 
-			cudaFree(sim_seq_dev);
-			cudaFree(seq_type_counts_dev);
-			cudaFree(seq_type_offsets_dev);
+			cu(cudaFree(sim_seq_dev));
+			cu(cudaFree(seq_type_counts_dev));
+			cu(cudaFree(seq_type_offsets_dev));
 
 			for (auto id : sim_seq) {
 				components_host[id]->sim_step_finished();

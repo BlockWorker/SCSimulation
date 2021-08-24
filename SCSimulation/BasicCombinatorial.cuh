@@ -1,7 +1,6 @@
 ﻿#pragma once
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+#include "cuda_base.cuh"
 #include <stdint.h>
 #include <memory.h>
 
@@ -11,7 +10,7 @@
 class Inverter : public CombinatorialComponent
 {
 public:
-	Inverter(uint32_t input, uint32_t output) : CombinatorialComponent(1, 1, typehash(Inverter), sizeof(Inverter)) {
+	Inverter(uint32_t input, uint32_t output) : CombinatorialComponent(1, 1, typehash(Inverter), sizeof(Inverter), alignof(Inverter)) {
 		inputs[0] = input;
 		outputs[0] = output;
 	}
@@ -41,7 +40,7 @@ public:
 class AndGate : public CombinatorialComponent
 {
 public:
-	AndGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(AndGate), sizeof(AndGate)) {
+	AndGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(AndGate), sizeof(AndGate), alignof(AndGate)) {
 		inputs[0] = input1;
 		inputs[1] = input2;
 		outputs[0] = output;
@@ -75,7 +74,7 @@ public:
 class NandGate : public CombinatorialComponent
 {
 public:
-	NandGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(NandGate), sizeof(NandGate)) {
+	NandGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(NandGate), sizeof(NandGate), alignof(NandGate)) {
 		inputs[0] = input1;
 		inputs[1] = input2;
 		outputs[0] = output;
@@ -108,7 +107,7 @@ public:
 class OrGate : public CombinatorialComponent
 {
 public:
-	OrGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(OrGate), sizeof(OrGate)) {
+	OrGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(OrGate), sizeof(OrGate), alignof(OrGate)) {
 		inputs[0] = input1;
 		inputs[1] = input2;
 		outputs[0] = output;
@@ -141,7 +140,7 @@ public:
 class NorGate : public CombinatorialComponent
 {
 public:
-	NorGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(NorGate), sizeof(NorGate)) {
+	NorGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(NorGate), sizeof(NorGate), alignof(NorGate)) {
 		inputs[0] = input1;
 		inputs[1] = input2;
 		outputs[0] = output;
@@ -174,7 +173,7 @@ public:
 class XorGate : public CombinatorialComponent
 {
 public:
-	XorGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(XorGate), sizeof(XorGate)) {
+	XorGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(XorGate), sizeof(XorGate), alignof(XorGate)) {
 		inputs[0] = input1;
 		inputs[1] = input2;
 		outputs[0] = output;
@@ -207,7 +206,7 @@ public:
 class XnorGate : public CombinatorialComponent
 {
 public:
-	XnorGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(XnorGate), sizeof(XnorGate)) {
+	XnorGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(XnorGate), sizeof(XnorGate), alignof(XnorGate)) {
 		inputs[0] = input1;
 		inputs[1] = input2;
 		outputs[0] = output;
@@ -240,7 +239,7 @@ public:
 class Multiplexer2 : public CombinatorialComponent
 {
 public:
-	Multiplexer2(uint32_t input1, uint32_t input2, uint32_t select, uint32_t output) : CombinatorialComponent(3, 1, typehash(Multiplexer2), sizeof(Multiplexer2)) {
+	Multiplexer2(uint32_t input1, uint32_t input2, uint32_t select, uint32_t output) : CombinatorialComponent(3, 1, typehash(Multiplexer2), sizeof(Multiplexer2), alignof(Multiplexer2)) {
 		inputs[0] = input1;
 		inputs[1] = input2;
 		inputs[2] = select;
@@ -279,7 +278,7 @@ class MultiplexerN : public CombinatorialComponent
 {
 public:
 	MultiplexerN(uint32_t num_inputs, uint32_t* inputs, uint32_t* selects, uint32_t output) : num_mux_inputs(num_inputs), num_selects((uint32_t)ceil(log2((double)num_inputs))),
-		CombinatorialComponent(num_inputs + num_selects, 1, typehash(MultiplexerN), sizeof(MultiplexerN)) {
+		CombinatorialComponent(num_inputs + num_selects, 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN)) {
 
 		memcpy(this->inputs, inputs, num_inputs * sizeof(uint32_t));
 		memcpy((this->inputs + num_inputs), selects, num_selects * sizeof(uint32_t));
@@ -288,7 +287,7 @@ public:
 	}
 
 	MultiplexerN(std::initializer_list<uint32_t> inputs, std::initializer_list<uint32_t> selects, uint32_t output) : num_mux_inputs(inputs.size()), num_selects((uint32_t)ceil(log2((double)inputs.size()))),
-		CombinatorialComponent(inputs.size() + (uint32_t)ceil(log2((double)inputs.size())), 1, typehash(MultiplexerN), sizeof(MultiplexerN)) {
+		CombinatorialComponent(inputs.size() + (uint32_t)ceil(log2((double)inputs.size())), 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN)) {
 
 		if (selects.size() < num_selects) throw;
 		
