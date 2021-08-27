@@ -24,6 +24,7 @@ public:
 	void set_sim_length(uint32_t sim_length);
 
 	uint32_t add_net();
+	std::pair<uint32_t, uint32_t> add_nets(uint32_t count);
 	void add_component(CombinatorialComponent* component);
 	void add_component(SequentialComponent* component);
 

@@ -114,6 +114,13 @@ uint32_t StochasticCircuitFactory::add_net() {
 	return num_nets++;
 }
 
+std::pair<uint32_t, uint32_t> StochasticCircuitFactory::add_nets(uint32_t count) {
+	for (uint32_t i = 0; i < count; i++) driven_nets.push_back(false);
+	auto first = num_nets;
+	num_nets += count;
+	return std::make_pair(first, num_nets - 1);
+}
+
 void StochasticCircuitFactory::add_component(CombinatorialComponent* component) {
 	auto index = add_component_internal(component);
 	num_comb_comp++;

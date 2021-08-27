@@ -88,6 +88,7 @@
     <CudaCompile Include="CircuitComponent.cuh" />
     <CudaCompile Include="CombinatorialComponent.cuh" />
     <CudaCompile Include="main.cu" />
+    <CudaCompile Include="main_old.cu" />
     <CudaCompile Include="SequentialComponent.cu" />
     <CudaCompile Include="StochasticCircuit.cu" />
     <CudaCompile Include="StochasticCircuit.cuh" />
@@ -95,12 +96,20 @@
     <CudaCompile Include="StochasticNumber.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cuda_base.cuh" />
+    <ClInclude Include="curand_base.cuh" />
+    <ClInclude Include="Delay.cuh" />
+    <ClInclude Include="InverterTestbench.cuh" />
     <ClInclude Include="libpopcnt.h" />
+    <ClInclude Include="MuxNTestbench.cuh" />
     <ClInclude Include="Range.h" />
     <ClInclude Include="SequentialComponent.cuh" />
+    <ClInclude Include="SquarerTestbench.cuh" />
     <ClInclude Include="Stanh.cuh" />
+    <ClInclude Include="StanhTestbench.cuh" />
     <ClInclude Include="StochasticCircuitFactory.cuh" />
     <ClInclude Include="StochasticNumber.cuh" />
+    <ClInclude Include="Testbench.cuh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

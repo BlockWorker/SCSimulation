@@ -101,6 +101,8 @@ __global__ void sngen_kern(double* rand, double* values, uint32_t* result, size_
 	}
 }
 
+constexpr uint32_t MAX_CURAND_BATCH_WORDS = 1 << 22;
+
 void StochasticNumber::generate_multiple_curand(StochasticNumber** numbers, uint32_t length, double* values_unipolar, size_t count) {
 	if (length % 32 != 0) throw;
 	auto word_length = length / 32;
@@ -109,30 +111,39 @@ void StochasticNumber::generate_multiple_curand(StochasticNumber** numbers, uint
 	uint32_t* sn_dev;
 	size_t sn_dev_pitch;
 
-	cu(cudaMalloc(&rand_dev, count * length * sizeof(double)));
-	cu(cudaMalloc(&val_dev, count * sizeof(double)));
-	cu(cudaMallocPitch(&sn_dev, &sn_dev_pitch, word_length * sizeof(uint32_t), count));
-
-	cu(cudaMemcpy(val_dev, values_unipolar, count * sizeof(double), cudaMemcpyHostToDevice));
+	uint32_t max_batch = MAX_CURAND_BATCH_WORDS / word_length;
 
 	curandGenerator_t gen;
 	cur(curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT));
 	cur(curandSetPseudoRandomGeneratorSeed(gen, std::random_device()()));
-	cur(curandGenerateUniformDouble(gen, rand_dev, count * length));
 
-	auto block_size = __min(word_length, 256);
-	dim3 grid_size(count, (word_length + block_size - 1) / block_size);
+	for (uint32_t batch_offset = 0; batch_offset < count; batch_offset += max_batch) {
+		uint32_t batch_size = __min(count - batch_offset, max_batch);
 
-	sngen_kern<<<grid_size, block_size>>>(rand_dev, val_dev, sn_dev, sn_dev_pitch, length, word_length);
+		cu(cudaMalloc(&rand_dev, batch_size * length * sizeof(double)));
+		cu(cudaMalloc(&val_dev, batch_size * sizeof(double)));
+		cu(cudaMallocPitch(&sn_dev, &sn_dev_pitch, word_length * sizeof(uint32_t), batch_size));
 
-	for (size_t i = 0; i < count; i++) {
-		auto data_ptr = (uint32_t*)((char*)sn_dev + (i * sn_dev_pitch));
-		numbers[i] = new StochasticNumber(length, data_ptr, true);
+		cu(cudaMemcpy(val_dev, values_unipolar + batch_offset, batch_size * sizeof(double), cudaMemcpyHostToDevice));
+		
+		cur(curandGenerateUniformDouble(gen, rand_dev, batch_size * length));
+
+		auto block_size = __min(word_length, 256);
+		dim3 grid_size(batch_size, (word_length + block_size - 1) / block_size);
+
+		sngen_kern<<<grid_size, block_size>>>(rand_dev, val_dev, sn_dev, sn_dev_pitch, length, word_length);
+
+		for (size_t i = 0; i < batch_size; i++) {
+			auto data_ptr = (uint32_t*)((char*)sn_dev + (i * sn_dev_pitch));
+			numbers[batch_offset + i] = new StochasticNumber(length, data_ptr, true);
+		}
+
+		cu(cudaFree(rand_dev));
+		cu(cudaFree(val_dev));
+		cu(cudaFree(sn_dev));
 	}
 
-	cu(cudaFree(rand_dev));
-	cu(cudaFree(val_dev));
-	cu(cudaFree(sn_dev));
+	cur(curandDestroyGenerator(gen));
 }
 
 const uint32_t* StochasticNumber::get_data() const {
@@ -176,6 +187,7 @@ void StochasticNumber::print_internal(double value, const char* ident, uint32_t 
 			std::cout << ((word & 0x80000000u) > 0 ? '1' : '0');
 			word <<= 1;
 		}
+		std::cout << " ";
 	}
 	if (bits < length) std::cout << "... (" << length << ")";
 	std::cout << std::endl;
