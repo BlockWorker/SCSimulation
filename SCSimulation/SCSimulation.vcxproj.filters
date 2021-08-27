@@ -4,7 +4,6 @@
     <CudaCompile Include="CircuitComponent.cu" />
     <CudaCompile Include="CircuitComponent.cuh" />
     <CudaCompile Include="CombinatorialComponent.cuh" />
-    <CudaCompile Include="main.cu" />
     <CudaCompile Include="SequentialComponent.cu" />
     <CudaCompile Include="StochasticCircuit.cu" />
     <CudaCompile Include="StochasticCircuit.cuh" />
@@ -13,7 +12,13 @@
     <CudaCompile Include="BasicCombinatorial.cuh">
       <Filter>Components</Filter>
     </CudaCompile>
-    <CudaCompile Include="main_old.cu" />
+    <CudaCompile Include="CombinatorialComponent.cu" />
+    <CudaCompile Include="BasicCombinatorial.cu">
+      <Filter>Components</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Stanh.cu">
+      <Filter>Components</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libpopcnt.h" />
@@ -24,33 +29,14 @@
     <ClInclude Include="Stanh.cuh">
       <Filter>Components</Filter>
     </ClInclude>
-    <ClInclude Include="Testbench.cuh">
-      <Filter>Benchmark</Filter>
-    </ClInclude>
-    <ClInclude Include="StanhTestbench.cuh">
-      <Filter>Benchmark</Filter>
-    </ClInclude>
     <ClInclude Include="cuda_base.cuh" />
     <ClInclude Include="curand_base.cuh" />
-    <ClInclude Include="Delay.cuh">
-      <Filter>Components</Filter>
-    </ClInclude>
-    <ClInclude Include="SquarerTestbench.cuh">
-      <Filter>Benchmark</Filter>
-    </ClInclude>
-    <ClInclude Include="InverterTestbench.cuh">
-      <Filter>Benchmark</Filter>
-    </ClInclude>
-    <ClInclude Include="MuxNTestbench.cuh">
-      <Filter>Benchmark</Filter>
-    </ClInclude>
+    <ClInclude Include="dll.h" />
+    <ClInclude Include="circuit_component_defines.cuh" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Components">
       <UniqueIdentifier>{7b8793a3-05ce-4f92-be47-7c5b881b8918}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Benchmark">
-      <UniqueIdentifier>{7fb99ae8-29aa-48e3-a82a-69596096c261}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

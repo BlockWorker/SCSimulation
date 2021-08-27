@@ -6,6 +6,8 @@
 #include "StochasticCircuitFactory.cuh"
 #include "StochasticCircuit.cuh"
 
+using namespace scsim;
+
 constexpr char CSV_SEPARATOR = ';';
 constexpr char CSV_DECIMAL_SEP = ',';
 

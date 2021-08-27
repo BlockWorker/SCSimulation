@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30611.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SCSimulation", "SCSimulation\SCSimulation.vcxproj", "{CC1BB8B4-F1D2-4266-9525-8810C1B0BCA6}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SCSimulationTestbench", "SCSimulationTestbench\SCSimulationTestbench.vcxproj", "{A202A885-87CD-468C-A421-56D159D36C9E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -15,6 +17,10 @@ Global
 		{CC1BB8B4-F1D2-4266-9525-8810C1B0BCA6}.Debug|x64.Build.0 = Debug|x64
 		{CC1BB8B4-F1D2-4266-9525-8810C1B0BCA6}.Release|x64.ActiveCfg = Release|x64
 		{CC1BB8B4-F1D2-4266-9525-8810C1B0BCA6}.Release|x64.Build.0 = Release|x64
+		{A202A885-87CD-468C-A421-56D159D36C9E}.Debug|x64.ActiveCfg = Debug|x64
+		{A202A885-87CD-468C-A421-56D159D36C9E}.Debug|x64.Build.0 = Debug|x64
+		{A202A885-87CD-468C-A421-56D159D36C9E}.Release|x64.ActiveCfg = Release|x64
+		{A202A885-87CD-468C-A421-56D159D36C9E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

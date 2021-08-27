@@ -9,6 +9,8 @@
 #include "BasicCombinatorial.cuh"
 #include "Stanh.cuh"
 
+using namespace scsim;
+
 constexpr uint32_t SN_LENGTH = 1 << 16;
 constexpr uint32_t MAX_PRINT = 1 << 6;
 

@@ -3,7 +3,6 @@
 #include "Testbench.cuh"
 #include "StochasticNumber.cuh"
 #include "BasicCombinatorial.cuh"
-#include "Delay.cuh"
 
 class SquarerTestbench : public Testbench
 {
