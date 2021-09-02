@@ -17,10 +17,19 @@ namespace scsim {
 		uint32_t* inputs;
 		uint32_t* outputs;
 
-		void (*simulate_step_dev_ptr)(CircuitComponent*);
+		void (*simulate_step_dev_ptr)(CircuitComponent*); //pointer to type-specific device simulation function
 
+		/// <param name="type">Unique component type index/hash, use typehash(Type) macro in circuit_component_defines.h</param>
+		/// <param name="size">Memory size of component, use sizeof(Type)</param>
+		/// <param name="align">Memory alignment of component, use alignof(Type)</param>
 		CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size, size_t align);
+
 		virtual ~CircuitComponent();
+
+		CircuitComponent(const CircuitComponent& other) = delete;
+		CircuitComponent& operator=(const CircuitComponent& other) = delete;
+		CircuitComponent(CircuitComponent&& other) = delete;
+		CircuitComponent& operator=(CircuitComponent&& other) = delete;
 
 		uint32_t current_sim_progress() const;
 		uint32_t current_sim_progress_word() const;
@@ -33,7 +42,7 @@ namespace scsim {
 		virtual void copy_state_host_to_device() = 0;
 		virtual void copy_state_device_to_host() = 0;
 
-		void calculate_simulation_progress();
+		virtual void calculate_simulation_progress();
 		virtual void simulate_step_host() = 0;
 
 		__device__ void simulate_step_dev();

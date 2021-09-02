@@ -5,15 +5,21 @@
 
 namespace scsim {
 
+    //input iterator implementing an integer range
     class Range
     {
     public:
 
         const uint32_t from, to;
 
-        class iterator : public std::iterator<std::forward_iterator_tag, uint32_t>
+        class iterator
         {
         public:
+            using iterator_category = std::forward_iterator_tag;
+            using value_type = uint32_t;
+            using difference_type = ptrdiff_t;
+            using pointer = uint32_t*;
+            using reference = uint32_t&;
 
             explicit iterator(uint32_t _from, uint32_t _to, uint32_t _num = 0) : from(_from), to(_to), num(_num) {}
             iterator& operator++() { num = to >= from ? num + 1 : num - 1; return *this; }

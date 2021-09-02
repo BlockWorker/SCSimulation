@@ -6,9 +6,11 @@
 
 namespace scsim {
 
+	//Stochastic tanh function
 	class SCSIMAPI Stanh : public SequentialComponent
 	{
 	public:
+		/// <param name="k">Number of states: output ~= tanh((k/2) * input)</param>
 		Stanh(uint32_t input, uint32_t output, uint32_t k);
 
 		virtual void reset_state() override;

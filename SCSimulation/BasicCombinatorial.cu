@@ -16,7 +16,7 @@ namespace scsim {
 
 	link_device_sim_function(Inverter)
 
-		void Inverter::simulate_step_host() {
+	void Inverter::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset = input_offsets_host[0];
 
@@ -44,7 +44,7 @@ namespace scsim {
 
 	link_device_sim_function(AndGate)
 
-		void AndGate::simulate_step_host() {
+	void AndGate::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
@@ -74,7 +74,7 @@ namespace scsim {
 
 	link_device_sim_function(NandGate)
 
-		void NandGate::simulate_step_host() {
+	void NandGate::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
@@ -104,7 +104,7 @@ namespace scsim {
 
 	link_device_sim_function(OrGate)
 
-		void OrGate::simulate_step_host() {
+	void OrGate::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
@@ -134,7 +134,7 @@ namespace scsim {
 
 	link_device_sim_function(NorGate)
 
-		void NorGate::simulate_step_host() {
+	void NorGate::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
@@ -164,7 +164,7 @@ namespace scsim {
 
 	link_device_sim_function(XorGate)
 
-		void XorGate::simulate_step_host() {
+	void XorGate::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
@@ -194,7 +194,7 @@ namespace scsim {
 
 	link_device_sim_function(XnorGate)
 
-		void XnorGate::simulate_step_host() {
+	void XnorGate::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
@@ -225,7 +225,7 @@ namespace scsim {
 
 	link_device_sim_function(Multiplexer2)
 
-		void Multiplexer2::simulate_step_host() {
+	void Multiplexer2::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
@@ -263,11 +263,11 @@ namespace scsim {
 	MultiplexerN::MultiplexerN(uint32_t num_inputs, uint32_t first_input, uint32_t first_select, uint32_t output) : num_mux_inputs(num_inputs), num_selects((uint32_t)ceil(log2((double)num_inputs))),
 		CombinatorialComponent(num_inputs + num_selects, 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN)) {
 
-		for (auto i = 0; i < num_inputs; i++) {
+		for (uint32_t i = 0; i < num_inputs; i++) {
 			this->inputs[i] = first_input + i;
 		}
 
-		for (auto i = 0; i < num_selects; i++) {
+		for (uint32_t i = 0; i < num_selects; i++) {
 			this->inputs[num_inputs + i] = first_select + i;
 		}
 
@@ -280,12 +280,12 @@ namespace scsim {
 		if (selects.size() < num_selects) throw;
 
 		auto in = inputs.begin();
-		for (auto i = 0; i < inputs.size(); i++) {
+		for (uint32_t i = 0; i < inputs.size(); i++) {
 			this->inputs[i] = *in++;
 		}
 
 		auto sel = selects.begin();
-		for (auto i = 0; i < num_selects; i++) {
+		for (uint32_t i = 0; i < num_selects; i++) {
 			this->inputs[inputs.size() + i] = *sel++;
 		}
 
@@ -294,7 +294,7 @@ namespace scsim {
 
 	link_device_sim_function(MultiplexerN)
 
-		void MultiplexerN::simulate_step_host() {
+	void MultiplexerN::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
 
 		for (auto i = current_progress_word; i < next_step_progress_word; i++) {
@@ -303,14 +303,15 @@ namespace scsim {
 				uint32_t input = circuit->net_values_host[input_offsets_host[j] + i];
 				for (uint32_t k = 0; k < num_selects; k++) {
 					auto sel = circuit->net_values_host[input_offsets_host[num_mux_inputs + k] + i];
-					input &= ((j & (1 << k)) > 0) ? sel : ~sel;
+					input &= ((j & (1 << k)) > 0) ? sel : ~sel; //only keep input bits where all select signals are correct to select the corresponding input
 				}
-				word |= input;
+				word |= input; //OR all filtered inputs together to produce final output
 			}
 			circuit->net_values_host[out_offset + i] = word;
 		}
 	}
 
+	//device simulation equivalent to host simulation (but only one word per thread)
 	__device__ void MultiplexerN::_simulate_step_dev(CircuitComponent* comp) {
 		auto g = (MultiplexerN*)comp;
 		auto out_offset = g->output_offsets_dev[0];
@@ -338,7 +339,32 @@ namespace scsim {
 
 	link_device_sim_function(Delay)
 
-		void Delay::simulate_step_host() {
+	void Delay::calculate_simulation_progress() {
+		current_progress = circuit->sim_length;
+		for (uint32_t i = 0; i < num_outputs; i++) {
+			auto out_progress = circuit->net_progress_host[outputs[i]];
+			if (out_progress < current_progress) { //current progress equals the minimum progress of output nets
+				current_progress = out_progress;
+			}
+		}
+
+		next_step_progress = circuit->sim_length;
+		for (uint32_t i = 0; i < num_inputs; i++) {
+			auto in_progress = circuit->net_progress_host[inputs[i]];
+			if (in_progress < next_step_progress) { //next step progress equals the minimum progress of input nets + 1 (delay can progress one step further)
+				next_step_progress = in_progress + 1;
+			}
+		}
+
+		if (next_step_progress < current_progress) {
+			next_step_progress = current_progress;
+		}
+
+		current_progress_word = current_progress / 32;
+		next_step_progress_word = (next_step_progress + 31) / 32;
+	}
+
+	void Delay::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset = input_offsets_host[0];
 

@@ -29,8 +29,8 @@ namespace scsim {
 		free(input_offsets_host);
 		free(output_offsets_host);
 		if (!circuit->host_only) {
-			cu(cudaFree(input_offsets_dev));
-			cu(cudaFree(output_offsets_dev));
+			cudaFree(input_offsets_dev);
+			cudaFree(output_offsets_dev);
 		}
 	}
 
@@ -55,18 +55,18 @@ namespace scsim {
 	}
 
 	void CircuitComponent::calculate_simulation_progress() {
-		current_progress = UINT32_MAX;
+		current_progress = circuit->sim_length;
 		for (uint32_t i = 0; i < num_outputs; i++) {
 			auto out_progress = circuit->net_progress_host[outputs[i]];
-			if (out_progress < current_progress) {
+			if (out_progress < current_progress) { //current progress equals the minimum progress of output nets
 				current_progress = out_progress;
 			}
 		}
 
-		next_step_progress = UINT32_MAX;
+		next_step_progress = circuit->sim_length;
 		for (uint32_t i = 0; i < num_inputs; i++) {
 			auto in_progress = circuit->net_progress_host[inputs[i]];
-			if (in_progress < next_step_progress) {
+			if (in_progress < next_step_progress) { //next step progress equals the minimum progress of input nets
 				next_step_progress = in_progress;
 			}
 		}

@@ -4,6 +4,7 @@
 #include "device_launch_parameters.h"
 #include <exception>
 
+//wrapper macro to detect CUDA errors
 #define cu(call) do { cudaError_t ___err = (call); if (___err != cudaSuccess) throw scsim::CudaError(___err); } while (false)
 
 namespace scsim {

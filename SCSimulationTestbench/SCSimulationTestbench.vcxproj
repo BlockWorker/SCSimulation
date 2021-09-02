@@ -12,7 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="main.cu" />
-    <CudaCompile Include="main_old.cu" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SCSimulation\SCSimulation.vcxproj">

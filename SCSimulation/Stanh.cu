@@ -16,7 +16,7 @@ namespace scsim {
 
 	link_device_sim_function(Stanh)
 
-		void Stanh::reset_state() {
+	void Stanh::reset_state() {
 		state_ptr()[0] = k / 2;
 	}
 
@@ -26,31 +26,35 @@ namespace scsim {
 
 		auto state = state_ptr();
 
-		uint32_t out_word = circuit->net_values_host[out_offset + current_progress_word] >> (current_progress % 32);
+		uint32_t out_word = circuit->net_values_host[out_offset + current_progress_word] >> (32 - (current_progress % 32)); //present output, shifted for seamless continuation
 
 		for (uint32_t i = current_progress_word; i < next_step_progress_word; i++) {
 			auto in_word = circuit->net_values_host[in_offset + i];
 			for (uint32_t j = 0; j < 32; j++) {
 				auto bit = 32 * i + j;
-				if (bit < current_progress) continue;
-				if (bit >= next_step_progress) {
+				if (bit < current_progress) { //ignore bits that have already been processed
+					in_word <<= 1;
+					continue;
+				}
+				if (bit >= next_step_progress) { //last word ends before being full: shift for correct bit position
 					out_word <<= (32 - j);
 					break;
 				}
 
 				out_word <<= 1;
-				putbit(out_word, state[0] >= k / 2);
+				putbit(out_word, state[0] >= k / 2); //push zero if in lower half of states, one if in upper half of states
 
 				auto in_bit = takebit(in_word);
 				in_word <<= 1;
-				if (in_bit && state[0] < k - 1) state[0]++;
-				else if (!in_bit && state[0] > 0) state[0]--;
+				if (in_bit && state[0] < k - 1) state[0]++; //increment state if one is received
+				else if (!in_bit && state[0] > 0) state[0]--; //decrement state if zero is received
 			}
 			circuit->net_values_host[out_offset + i] = out_word;
 			out_word = 0;
 		}
 	}
 
+	//device simulation equivalent to host simulation
 	__device__ void Stanh::_simulate_step_dev(CircuitComponent* comp) {
 		auto g = (Stanh*)comp;
 		auto out_offset = g->output_offsets_dev[0];
@@ -58,13 +62,16 @@ namespace scsim {
 
 		auto state = g->state_ptr();
 
-		uint32_t out_word = g->net_values_dev[out_offset + g->current_progress_word] >> (g->current_progress % 32);
+		uint32_t out_word = g->net_values_dev[out_offset + g->current_progress_word] >> (32 - (g->current_progress % 32));
 
 		for (uint32_t i = g->current_progress_word; i < g->next_step_progress_word; i++) {
 			auto in_word = g->net_values_dev[in_offset + i];
 			for (uint32_t j = 0; j < 32; j++) {
 				auto bit = 32 * i + j;
-				if (bit < g->current_progress) continue;
+				if (bit < g->current_progress) {
+					in_word <<= 1;
+					continue;
+				}
 				if (bit >= g->next_step_progress) {
 					out_word <<= (32 - j);
 					break;
