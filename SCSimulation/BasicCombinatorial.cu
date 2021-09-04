@@ -29,7 +29,7 @@ namespace scsim {
 		auto g = (Inverter*)comp;
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset = g->input_offsets_dev[0];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.x + threadIdx.x;
+		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
 		if (i < g->next_step_progress_word) {
 			g->net_values_dev[out_offset + i] = ~g->net_values_dev[in_offset + i];
 		}
@@ -59,7 +59,7 @@ namespace scsim {
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.x + threadIdx.x;
+		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
 		if (i < g->next_step_progress_word) {
 			g->net_values_dev[out_offset + i] = g->net_values_dev[in_offset_1 + i] & g->net_values_dev[in_offset_2 + i];
 		}
@@ -89,7 +89,7 @@ namespace scsim {
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.x + threadIdx.x;
+		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
 		if (i < g->next_step_progress_word) {
 			g->net_values_dev[out_offset + i] = ~(g->net_values_dev[in_offset_1 + i] & g->net_values_dev[in_offset_2 + i]);
 		}
@@ -119,7 +119,7 @@ namespace scsim {
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.x + threadIdx.x;
+		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
 		if (i < g->next_step_progress_word) {
 			g->net_values_dev[out_offset + i] = g->net_values_dev[in_offset_1 + i] | g->net_values_dev[in_offset_2 + i];
 		}
@@ -149,7 +149,7 @@ namespace scsim {
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.x + threadIdx.x;
+		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
 		if (i < g->next_step_progress_word) {
 			g->net_values_dev[out_offset + i] = ~(g->net_values_dev[in_offset_1 + i] | g->net_values_dev[in_offset_2 + i]);
 		}
@@ -179,7 +179,7 @@ namespace scsim {
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.x + threadIdx.x;
+		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
 		if (i < g->next_step_progress_word) {
 			g->net_values_dev[out_offset + i] = g->net_values_dev[in_offset_1 + i] ^ g->net_values_dev[in_offset_2 + i];
 		}
@@ -209,7 +209,7 @@ namespace scsim {
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.x + threadIdx.x;
+		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
 		if (i < g->next_step_progress_word) {
 			g->net_values_dev[out_offset + i] = ~(g->net_values_dev[in_offset_1 + i] ^ g->net_values_dev[in_offset_2 + i]);
 		}
@@ -243,7 +243,7 @@ namespace scsim {
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
 		auto sel_offset = g->input_offsets_dev[2];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.x + threadIdx.x;
+		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
 		if (i < g->next_step_progress_word) {
 			auto sel = g->net_values_dev[sel_offset + i];
 			g->net_values_dev[out_offset + i] = (g->net_values_dev[in_offset_1 + i] & ~sel) | (g->net_values_dev[in_offset_2 + i] & sel);
@@ -316,7 +316,7 @@ namespace scsim {
 		auto g = (MultiplexerN*)comp;
 		auto out_offset = g->output_offsets_dev[0];
 
-		auto i = g->current_progress_word + blockIdx.y * blockDim.x + threadIdx.x;
+		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
 		if (i < g->next_step_progress_word) {
 			uint32_t word = 0;
 			for (uint32_t j = 0; j < g->num_mux_inputs; j++) {
@@ -380,7 +380,7 @@ namespace scsim {
 		auto g = (Delay*)comp;
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset = g->input_offsets_dev[0];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.x + threadIdx.x;
+		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
 		if (i < g->next_step_progress_word) {
 			auto curr_word = g->net_values_dev[in_offset + i];
 			auto prev_word = i == 0 ? 0 : g->net_values_dev[in_offset + i - 1];

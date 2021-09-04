@@ -153,7 +153,7 @@ namespace scsim {
 
 	__global__ void exec_sim_step(CircuitComponent** components, uint32_t* comp_indices, uint32_t* comp_counts, uint32_t* comp_offsets) {
 		auto type = blockIdx.z;
-		auto comp = blockIdx.x * blockDim.y + threadIdx.y;
+		auto comp = blockIdx.x * blockDim.x + threadIdx.x;
 		if (comp < comp_counts[type]) components[comp_indices[comp_offsets[type] + comp]]->simulate_step_dev();
 	}
 
@@ -214,16 +214,16 @@ namespace scsim {
 				cu(cudaMemcpy(comb_type_counts_dev, comb_type_counts.data(), comb_type_counts.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
 				cu(cudaMemcpy(comb_type_offsets_dev, comb_type_offsets.data(), comb_type_offsets.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
 
-				uint32_t block_size_x = __min(comb_sim_words, 64); //block size x: words to simulate
+				uint32_t block_size_y = __min(comb_sim_words, 64); //block size y: words to simulate
 
 				auto num_threads_comp = *std::max_element(comb_type_counts.begin(), comb_type_counts.end());
-				uint32_t block_size_y = __min(num_threads_comp, 256 / block_size_x); //block size y: components of same type to simulate
+				uint32_t block_size_x = __min(num_threads_comp, 256 / block_size_y); //block size x: components of same type to simulate
 
 				dim3 block_size(block_size_x, block_size_y);
 
 				//grid size x and y: component/word count split into multiple blocks
 				//grid size z: component types
-				dim3 grid_size((num_threads_comp + block_size_y - 1) / block_size_y, (comb_sim_words + block_size_x - 1) / block_size_x, comb_type_counts.size());
+				dim3 grid_size((num_threads_comp + block_size_x - 1) / block_size_x, (comb_sim_words + block_size_y - 1) / block_size_y, comb_type_counts.size());
 
 				//transfer data to device, simulate, return data
 				copy_data_to_device();
@@ -278,9 +278,8 @@ namespace scsim {
 				cu(cudaMemcpy(seq_type_offsets_dev, seq_type_offsets.data(), seq_type_offsets.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
 
 				auto max_num_threads = *std::max_element(seq_type_counts.begin(), seq_type_counts.end());
-				uint32_t block_size_y = __min(max_num_threads, 256);
-				dim3 block_size(1, block_size_y); //only one thread per component -> block size x = 1, grid size y = 1
-				dim3 grid_size((max_num_threads + block_size_y - 1) / block_size_y, 1, seq_type_counts.size());
+				uint32_t block_size = __min(max_num_threads, 256); //only one thread per component -> block size y = 1, grid size y = 1
+				dim3 grid_size((max_num_threads + block_size - 1) / block_size, 1, seq_type_counts.size());
 
 				copy_data_to_device();
 				exec_sim_step<<<grid_size, block_size>>>(components_dev, sim_seq_dev, seq_type_counts_dev, seq_type_offsets_dev);
