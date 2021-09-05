@@ -17,7 +17,7 @@ namespace scsim {
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
 	protected:
-		virtual void link_devstep() override;
+		virtual void link_dev_functions() override;
 
 	};
 
@@ -31,7 +31,7 @@ namespace scsim {
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
 	protected:
-		virtual void link_devstep() override;
+		virtual void link_dev_functions() override;
 
 	};
 
@@ -45,7 +45,7 @@ namespace scsim {
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
 	protected:
-		virtual void link_devstep() override;
+		virtual void link_dev_functions() override;
 
 	};
 
@@ -59,7 +59,7 @@ namespace scsim {
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
 	protected:
-		virtual void link_devstep() override;
+		virtual void link_dev_functions() override;
 
 	};
 
@@ -73,7 +73,7 @@ namespace scsim {
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
 	protected:
-		virtual void link_devstep() override;
+		virtual void link_dev_functions() override;
 
 	};
 
@@ -87,7 +87,7 @@ namespace scsim {
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
 	protected:
-		virtual void link_devstep() override;
+		virtual void link_dev_functions() override;
 
 	};
 
@@ -101,7 +101,7 @@ namespace scsim {
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
 	protected:
-		virtual void link_devstep() override;
+		virtual void link_dev_functions() override;
 
 	};
 
@@ -115,7 +115,7 @@ namespace scsim {
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
 	protected:
-		virtual void link_devstep() override;
+		virtual void link_dev_functions() override;
 
 	};
 
@@ -127,11 +127,11 @@ namespace scsim {
 	public:
 		/// <param name="inputs">pointer to array of input net indices</param>
 		/// <param name="selects">pointer to array of select net indices, must be sufficiently long for required number of selects (ceil(log2(num_inputs)))</param>
-		MultiplexerN(uint32_t num_inputs, uint32_t* inputs, uint32_t* selects, uint32_t output);
+		MultiplexerN(uint32_t _num_inputs, uint32_t* inputs, uint32_t* selects, uint32_t output);
 
 		/// <param name="first_input">first input net index, further inputs assigned consecutive indices</param>
 		/// <param name="first_select">first select net index, further selects  assigned consecutive indices, must have sufficient nets available (ceil(log2(num_inputs)))</param>
-		MultiplexerN(uint32_t num_inputs, uint32_t first_input, uint32_t first_select, uint32_t output);
+		MultiplexerN(uint32_t _num_inputs, uint32_t first_input, uint32_t first_select, uint32_t output);
 
 		/// <param name="inputs">list of input net indices</param>
 		/// <param name="selects">list of select net indices, must be sufficiently long for required number of selects (ceil(log2(num_inputs)))</param>
@@ -142,7 +142,7 @@ namespace scsim {
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
 	protected:
-		virtual void link_devstep() override;
+		virtual void link_dev_functions() override;
 
 	private:
 		const uint32_t num_mux_inputs;
@@ -158,14 +158,16 @@ namespace scsim {
 	public:
 		Delay(uint32_t input, uint32_t output);
 
-		virtual void calculate_simulation_progress() override;
+		virtual void calculate_simulation_progress_host() override;
 
 		virtual void simulate_step_host() override;
+
+		static __device__ void _calculate_simulation_progress_dev(CircuitComponent* comp);
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
 	protected:
-		virtual void link_devstep() override;
+		virtual void link_dev_functions() override;
 
 	};
 

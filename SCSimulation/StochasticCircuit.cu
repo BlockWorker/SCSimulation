@@ -135,7 +135,7 @@ namespace scsim {
 			for (uint32_t i = 0; i < num_components; i++) { //sequentially go through components
 				CircuitComponent* comp = components_host[i];
 
-				comp->calculate_simulation_progress();
+				comp->calculate_simulation_progress_host();
 
 				if (comp->next_sim_progress() == last_round_possible_progress[i]) { //check and mark finished components
 					finished_components++;
@@ -144,17 +144,11 @@ namespace scsim {
 				last_round_possible_progress[i] = comp->next_sim_progress();
 
 				comp->simulate_step_host(); //simulate next step
-				comp->sim_step_finished();
+				comp->sim_step_finished_host();
 			}
 
 			if (finished_components == num_components) simulation_finished = true; //done if all components finished
 		}
-	}
-
-	__global__ void exec_sim_step(CircuitComponent** components, uint32_t* comp_indices, uint32_t* comp_counts, uint32_t* comp_offsets) {
-		auto type = blockIdx.z;
-		auto comp = blockIdx.x * blockDim.x + threadIdx.x;
-		if (comp < comp_counts[type]) components[comp_indices[comp_offsets[type] + comp]]->simulate_step_dev();
 	}
 
 	void StochasticCircuit::simulate_circuit() {
@@ -163,10 +157,38 @@ namespace scsim {
 			return;
 		}
 
+		copy_data_to_device();
+		simulate_circuit_dev_nocopy();
+		copy_data_from_device();
+	}
+
+	__global__ void calc_sim_progress(CircuitComponent** components, uint32_t count) {
+		auto comp = blockIdx.x * blockDim.x + threadIdx.x;
+		if (comp < count) components[comp]->calculate_simulation_progress_dev();
+	}
+
+	__global__ void exec_sim_step(CircuitComponent** components, uint32_t* comp_indices, uint32_t* comp_counts, uint32_t* comp_offsets) {
+		auto type = blockIdx.z;
+		auto comp = blockIdx.x * blockDim.x + threadIdx.x;
+		if (comp < comp_counts[type]) components[comp_indices[comp_offsets[type] + comp]]->simulate_step_dev();
+	}
+
+	__global__ void finish_sim_step(CircuitComponent** components, uint32_t* comp_indices, uint32_t count) {
+		auto comp = blockIdx.x * blockDim.x + threadIdx.x;
+		if (comp < count) components[comp_indices[comp]]->sim_step_finished_dev();
+	}
+
+	void StochasticCircuit::simulate_circuit_dev_nocopy() {
+		uint32_t block_size_calcp = __min(num_components, 256);
+		uint32_t num_blocks_calcp = block_size_calcp == 0 ? 0 : (num_components + block_size_calcp - 1) / block_size_calcp;
+
 		std::vector<uint32_t> last_round_possible_progress(num_components, 0);
 
-		while (!simulation_finished) { //iterate over all components until simulation is finished
+		while (!simulation_finished) { //run simulation rounds until simulation is finished
 			int finished_components = 0;
+
+			calc_sim_progress<<<num_blocks_calcp, block_size_calcp>>>(components_dev, num_components); //calculate progress for components
+			copy_components_from_device(); //copy component info to host
 
 			//combinatorial components
 			std::vector<uint32_t> sim_comb;
@@ -177,8 +199,6 @@ namespace scsim {
 			for (uint32_t i = 0; i < num_components_comb; i++) {
 				CircuitComponent* comp = components_host[i];
 				uint32_t ctype = comp->component_type;
-
-				comp->calculate_simulation_progress();
 
 				if (comp->next_sim_progress() == last_round_possible_progress[i]) { //check and mark finished components
 					finished_components++;
@@ -225,18 +245,17 @@ namespace scsim {
 				//grid size z: component types
 				dim3 grid_size((num_threads_comp + block_size_x - 1) / block_size_x, (comb_sim_words + block_size_y - 1) / block_size_y, comb_type_counts.size());
 
-				//transfer data to device, simulate, return data
-				copy_data_to_device();
+				//simulate
 				exec_sim_step<<<grid_size, block_size>>>(components_dev, sim_comb_dev, comb_type_counts_dev, comb_type_offsets_dev);
-				copy_data_from_device();
+
+				//mark step as finished
+				uint32_t block_size_fin = __min(sim_comb.size(), 256);
+				uint32_t num_blocks_fin = (sim_comb.size() + block_size_fin - 1) / block_size_fin;
+				finish_sim_step<<<num_blocks_fin, block_size_fin>>>(components_dev, sim_comb_dev, sim_comb.size());
 
 				cu(cudaFree(sim_comb_dev));
 				cu(cudaFree(comb_type_counts_dev));
 				cu(cudaFree(comb_type_offsets_dev));
-
-				for (auto id : sim_comb) {
-					components_host[id]->sim_step_finished(); //mark step as finished
-				}
 			}
 
 			//sequential components, similar to combinatorial as shown above
@@ -246,8 +265,6 @@ namespace scsim {
 			for (uint32_t i = num_components_comb; i < num_components; i++) {
 				CircuitComponent* comp = components_host[i];
 				uint32_t ctype = comp->component_type;
-
-				comp->calculate_simulation_progress();
 
 				if (comp->next_sim_progress() == last_round_possible_progress[i]) { //check and mark finished components
 					finished_components++;
@@ -281,17 +298,15 @@ namespace scsim {
 				uint32_t block_size = __min(max_num_threads, 256); //only one thread per component -> block size y = 1, grid size y = 1
 				dim3 grid_size((max_num_threads + block_size - 1) / block_size, 1, seq_type_counts.size());
 
-				copy_data_to_device();
 				exec_sim_step<<<grid_size, block_size>>>(components_dev, sim_seq_dev, seq_type_counts_dev, seq_type_offsets_dev);
-				copy_data_from_device();
+
+				uint32_t block_size_fin = __min(sim_seq.size(), 256);
+				uint32_t num_blocks_fin = (sim_seq.size() + block_size_fin - 1) / block_size_fin;
+				finish_sim_step<<<num_blocks_fin, block_size_fin>>>(components_dev, sim_seq_dev, sim_seq.size());
 
 				cu(cudaFree(sim_seq_dev));
 				cu(cudaFree(seq_type_counts_dev));
 				cu(cudaFree(seq_type_offsets_dev));
-
-				for (auto id : sim_seq) {
-					components_host[id]->sim_step_finished();
-				}
 			}
 
 			if (finished_components == num_components) simulation_finished = true; //done if all components finished
@@ -316,6 +331,10 @@ namespace scsim {
 		auto ret = num->get_value_bipolar();
 		delete num;
 		return ret;
+	}
+
+	void StochasticCircuit::copy_components_from_device() {
+		cu(cudaMemcpy2D(component_array_host, component_array_host_pitch, component_array_dev, component_array_dev_pitch, component_array_host_pitch, num_components, cudaMemcpyDeviceToHost));
 	}
 
 }

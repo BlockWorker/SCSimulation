@@ -20,7 +20,7 @@ namespace scsim {
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
 	protected:
-		virtual void link_devstep() override;
+		virtual void link_dev_functions() override;
 
 	private:
 		const uint32_t k;

@@ -119,7 +119,7 @@ namespace scsim {
 	}
 
 	//maximum number of SN words to be generated in a single batch - limited to prevent out-of-memory errors
-	constexpr uint32_t MAX_CURAND_BATCH_WORDS = 1 << 22;
+	constexpr uint32_t MAX_CURAND_BATCH_WORDS = 1 << 20;
 
 	void StochasticNumber::generate_multiple_curand(StochasticNumber** numbers, uint32_t length, double* values_unipolar, size_t count) {
 		auto word_length = (length + 31) / 32;

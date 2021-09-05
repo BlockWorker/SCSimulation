@@ -10,8 +10,8 @@
 namespace scsim {
 
 	Stanh::Stanh(uint32_t input, uint32_t output, uint32_t k) : SequentialComponent(1, 1, 1, typehash(Stanh), sizeof(Stanh), alignof(Stanh)), k(k) {
-		inputs[0] = input;
-		outputs[0] = output;
+		inputs_host[0] = input;
+		outputs_host[0] = output;
 	}
 
 	link_device_sim_function(Stanh)

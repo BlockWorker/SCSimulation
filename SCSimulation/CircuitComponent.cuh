@@ -14,10 +14,11 @@ namespace scsim {
 		const uint32_t component_type;
 		const uint32_t num_inputs;
 		const uint32_t num_outputs;
-		uint32_t* inputs;
-		uint32_t* outputs;
+		uint32_t* inputs_host;
+		uint32_t* outputs_host;
 
 		void (*simulate_step_dev_ptr)(CircuitComponent*); //pointer to type-specific device simulation function
+		void (*calc_progress_dev_ptr)(CircuitComponent*); //pointer to type-specific device progress calculation function
 
 		/// <param name="type">Unique component type index/hash, use typehash(Type) macro in circuit_component_defines.h</param>
 		/// <param name="size">Memory size of component, use sizeof(Type)</param>
@@ -42,12 +43,16 @@ namespace scsim {
 		virtual void copy_state_host_to_device() = 0;
 		virtual void copy_state_device_to_host() = 0;
 
-		virtual void calculate_simulation_progress();
-		virtual void simulate_step_host() = 0;
+		virtual void calculate_simulation_progress_host();
+		__device__ void calculate_simulation_progress_dev();
 
+		virtual void simulate_step_host() = 0;
 		__device__ void simulate_step_dev();
 
-		void sim_step_finished();
+		void sim_step_finished_host();
+		__device__ void sim_step_finished_dev();
+
+		static __device__ void _calculate_simulation_progress_dev(CircuitComponent* comp);
 
 	protected:
 		friend StochasticCircuitFactory;
@@ -58,6 +63,8 @@ namespace scsim {
 		const size_t mem_align;
 		CircuitComponent* dev_ptr;
 		uint32_t* net_values_dev;
+		uint32_t* net_progress_dev;
+		uint32_t sim_length;
 
 		uint32_t current_progress;
 		uint32_t current_progress_word;
@@ -69,11 +76,14 @@ namespace scsim {
 		size_t* input_offsets_dev;
 		size_t* output_offsets_dev;
 
+		uint32_t* inputs_dev;
+		uint32_t* outputs_dev;
+
 		void calculate_io_offsets();
 
 		virtual void init_with_circuit(StochasticCircuit* circuit);
 
-		virtual void link_devstep() = 0;
+		virtual void link_dev_functions();		
 
 	};
 

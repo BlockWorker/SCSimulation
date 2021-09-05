@@ -96,7 +96,7 @@ namespace scsim {
 
 			//link device simulation functions for all components
 			for (uint32_t i = 0; i < components.size(); i++) {
-				components_host[i]->link_devstep();
+				components_host[i]->link_dev_functions();
 			}
 
 			circuit->copy_data_from_device();
@@ -122,6 +122,7 @@ namespace scsim {
 
 	std::pair<uint32_t, uint32_t> StochasticCircuitFactory::add_nets(uint32_t count) {
 		if (count == 0) throw;
+		driven_nets.reserve(count);
 		for (uint32_t i = 0; i < count; i++) driven_nets.push_back(false); //new nets initially undriven
 		auto first = num_nets;
 		num_nets += count;
@@ -140,12 +141,12 @@ namespace scsim {
 
 	uint32_t StochasticCircuitFactory::add_component_internal(CircuitComponent* component) {
 		for (size_t i = 0; i < component->num_outputs; i++) {
-			auto net = component->outputs[i];
+			auto net = component->outputs_host[i];
 			if (net >= num_nets || driven_nets[net]) throw; //disallow invalid/nonexistent nets and multiple outputs per net
 		}
 
 		for (size_t i = 0; i < component->num_outputs; i++) {
-			auto net = component->outputs[i];
+			auto net = component->outputs_host[i];
 			driven_nets[net] = true; //mark all output nets as driven
 		}
 

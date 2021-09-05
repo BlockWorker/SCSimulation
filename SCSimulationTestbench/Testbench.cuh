@@ -43,7 +43,7 @@ public:
 
 		ss << "Setup index" << CSV_SEPARATOR << "Build";
 		for (uint32_t i = 0; i < num_iterations; i++) { //write iteration indices to title row
-			ss << CSV_SEPARATOR << i;
+			ss << CSV_SEPARATOR << i << "H" << CSV_SEPARATOR << i << "DT" << CSV_SEPARATOR << i << "DC";
 		}
 		write_additional_column_titles(ss); //write additional column titles if necessary
 		ss << "\n";
@@ -66,27 +66,40 @@ public:
 			ss << setup << CSV_SEPARATOR << std::chrono::duration_cast<std::chrono::microseconds>(build_end - build_start).count() / 1000.0;
 
 			for (uint32_t iteration = 0; iteration < setup_iters; iteration++) { //iterate over iterations
-				std::cout << "Running iteration " << iteration << std::endl;
+				std::cout << "Running iteration " << iteration << " host" << std::endl;
 
 				circuit->reset_circuit();
-				bool host_sim = config_circuit(setup, iteration); //configure circuit for current iteration
+				config_circuit(setup, iteration, false); //configure circuit for host iteration
 
 				//simulate circuit and measure time taken
-				auto iter_start = std::chrono::steady_clock::now();
-				if (host_sim) {
-					circuit->simulate_circuit_host_only();
-				} else {
-					circuit->simulate_circuit();
-					cu(cudaDeviceSynchronize());
-				}
-				auto iter_end = std::chrono::steady_clock::now();
+				auto h_iter_start = std::chrono::steady_clock::now();
+				circuit->simulate_circuit_host_only();
+				auto h_iter_end = std::chrono::steady_clock::now();
 
-				ss << CSV_SEPARATOR << std::chrono::duration_cast<std::chrono::microseconds>(iter_end - iter_start).count() / 1000.0;
+				ss << CSV_SEPARATOR << std::chrono::duration_cast<std::chrono::microseconds>(h_iter_end - h_iter_start).count() / 1000.0;
+
+				std::cout << "Running iteration " << iteration << " device" << std::endl;
+
+				circuit->reset_circuit();
+				config_circuit(setup, iteration, true); //configure circuit for host iteration
+
+				//simulate circuit and measure time taken
+				auto d_iter_start = std::chrono::steady_clock::now();
+				circuit->copy_data_to_device();
+				auto d_comp_start = std::chrono::steady_clock::now();
+				circuit->simulate_circuit_dev_nocopy();
+				cu(cudaDeviceSynchronize());
+				auto d_comp_end = std::chrono::steady_clock::now();
+				circuit->copy_data_from_device();
+				auto d_iter_end = std::chrono::steady_clock::now();
+
+				ss << CSV_SEPARATOR << std::chrono::duration_cast<std::chrono::microseconds>(d_iter_end - d_iter_start).count() / 1000.0;
+				ss << CSV_SEPARATOR << std::chrono::duration_cast<std::chrono::microseconds>(d_comp_end - d_comp_start).count() / 1000.0;
 
 				post_iter(setup, iteration); //run post-iteration tasks if required
 			}
 
-			for (uint32_t i = setup_iters; i < num_iterations; i++) ss << CSV_SEPARATOR; //pad columns for missing iterations
+			for (uint32_t i = setup_iters; i < num_iterations; i++) ss << CSV_SEPARATOR << CSV_SEPARATOR << CSV_SEPARATOR; //pad columns for missing iterations
 
 			post_setup(setup, ss); //run post-setup tasks if required (may write additional column values)
 
@@ -120,7 +133,7 @@ protected:
 	/// Configure circuit for given iteration index, use "circuit" variable
 	/// </summary>
 	/// <returns>Whether this iteration should be simulated on the host instead of the device</returns>
-	virtual bool config_circuit(uint32_t setup, uint32_t iteration) = 0;
+	virtual void config_circuit(uint32_t setup, uint32_t iteration, bool device) = 0;
 
 	/// <summary>
 	/// Run post-iteration tasks/calculations if required

@@ -60,6 +60,7 @@ namespace scsim {
 
 		void simulate_circuit_host_only();
 		void simulate_circuit();
+		void simulate_circuit_dev_nocopy();
 
 		StochasticNumber* get_net_value(uint32_t net);
 		double get_net_value_unipolar(uint32_t net);
@@ -82,6 +83,8 @@ namespace scsim {
 		StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values_host, uint32_t* net_values_dev, size_t net_values_dev_pitch, uint32_t* net_progress_host, uint32_t* net_progress_dev,
 			uint32_t num_components_comb, uint32_t num_components_seq, CircuitComponent** components_host, CircuitComponent** components_dev, char* component_array_host, size_t component_array_host_pitch,
 			char* component_array_dev, size_t component_array_dev_pitch);
+
+		void copy_components_from_device();
 
 	};
 

@@ -8,7 +8,7 @@ class InverterTestbench : public Testbench
 {
 public:
 	/// <param name="setups">Number of setups, setup i contains 2^(i+4) inverters</param>
-	InverterTestbench(uint32_t min_sim_length, uint32_t setups, uint32_t max_iter_runs) : Testbench(setups, 2 * max_iter_runs), min_sim_length(min_sim_length), max_iter_runs(max_iter_runs) {
+	InverterTestbench(uint32_t min_sim_length, uint32_t setups, uint32_t max_iter_runs) : Testbench(setups, max_iter_runs), min_sim_length(min_sim_length), max_iter_runs(max_iter_runs) {
 		numbers = nullptr;
 		vals = nullptr;
 		count = 0;
@@ -57,19 +57,16 @@ protected:
 			factory->add_component(new Inverter(first_in + i, first_out + i));
 		}
 
-		return 2 * num_runs;
+		return num_runs;
 	}
 
-	virtual bool config_circuit(uint32_t setup, uint32_t iteration) override {
-		auto iter_type = iteration % 2;
-		auto iter_run = iteration / 2;
-
+	virtual void config_circuit(uint32_t setup, uint32_t iteration, bool device) override {
 		uint32_t iter_sim_length = min_sim_length;
-		for (uint32_t i = 0; i < iter_run; i++) {
+		for (uint32_t i = 0; i < iteration; i++) {
 			iter_sim_length *= 2;
 		}
 
-		if (iter_type == 0) {
+		if (!device) {
 			numbers = (StochasticNumber**)malloc((count + 1) * sizeof(StochasticNumber*));
 			vals = (double*)malloc((count + 1) * sizeof(double));
 			for (uint32_t i = 0; i <= count; i++) {
@@ -83,15 +80,13 @@ protected:
 			circuit->set_net_value(first_in + i, numbers[i]);
 		}
 
-		if (iter_type == 1) {
+		if (device) {
 			for (uint32_t i = 0; i <= count; i++) delete numbers[i];
 			free(numbers);
 			free(vals);
 			numbers = nullptr;
 			vals = nullptr;
 		}
-
-		return iter_type == 0; //even iteration indices on host, uneven on device
 	}
 
 	virtual void write_additional_column_titles(std::stringstream& ss) override {
