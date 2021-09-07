@@ -59,8 +59,11 @@ namespace scsim {
 		void copy_data_from_device();
 
 		void simulate_circuit_host_only();
-		void simulate_circuit();
+		/// <summary>
+		/// Simulate circuit on the device without copying the circuit state back and forth, requires data to already be synchronized with device
+		/// </summary>
 		void simulate_circuit_dev_nocopy();
+		void simulate_circuit();
 
 		StochasticNumber* get_net_value(uint32_t net);
 		double get_net_value_unipolar(uint32_t net);

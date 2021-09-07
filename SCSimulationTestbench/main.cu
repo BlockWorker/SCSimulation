@@ -28,10 +28,10 @@ void run() {
 
 	std::filesystem::create_directory("results");
 
-	/*runBench(new MuxNTestbench(MIN_SN_LENGTH, 13, 10), "results\\muxn.csv");
+	runBench(new MuxNTestbench(MIN_SN_LENGTH, 13, 10), "results\\muxn.csv");
 	runBench(new InverterTestbench(MIN_SN_LENGTH, 14, 10), "results\\inverter.csv");
 	runBench(new SquarerTestbench(MIN_SN_LENGTH, 13, 10), "results\\squarer.csv");
-	runBench(new StanhTestbench(MIN_SN_LENGTH, 6, 14, 10), "results\\stanh.csv");*/
+	runBench(new StanhTestbench(MIN_SN_LENGTH, 6, 14, 10), "results\\stanh.csv");
 	runBench(new MLPTestbench(MIN_SN_LENGTH_MLP, 128, 8, 8), "results\\mlp.csv");
 }
 
