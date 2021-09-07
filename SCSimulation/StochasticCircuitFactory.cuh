@@ -9,6 +9,8 @@ namespace scsim {
 	class StochasticCircuit;
 	class CircuitComponent;
 	class CombinatorialComponent;
+
+	template<size_t state_size>
 	class SequentialComponent;
 
 	class SCSIMAPI StochasticCircuitFactory
@@ -33,7 +35,12 @@ namespace scsim {
 		std::pair<uint32_t, uint32_t> add_nets(uint32_t count);
 
 		void add_component(CombinatorialComponent* component);
-		void add_component(SequentialComponent* component);
+
+		template<size_t state_size>
+		void add_component(SequentialComponent<state_size>* component) {
+			auto index = add_component_internal(component);
+			num_seq_comp++;
+		}
 
 	private:
 		bool host_only;

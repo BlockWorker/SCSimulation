@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <algorithm>
+#include <chrono>
+#include <iostream>
 
 #include "StochasticCircuit.cuh"
 #include "CircuitComponent.cuh"
@@ -10,22 +12,22 @@
 namespace scsim {
 
 	StochasticCircuit::StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values, uint32_t* net_progress, uint32_t num_components_comb, uint32_t num_components_seq,
-		CircuitComponent** components) :
+		CircuitComponent** components, uint32_t* component_progress) :
 		host_only(true), sim_length(sim_length), sim_length_words((sim_length + 31) / 32), num_nets(num_nets), net_values_host(net_values), net_values_host_pitch((sim_length + 31) / 32 * sizeof(uint32_t)),
 		net_values_dev(nullptr), net_values_dev_pitch(0), net_progress_host(net_progress), net_progress_dev(nullptr), num_components_comb(num_components_comb), num_components_seq(num_components_seq),
 		num_components(num_components_comb + num_components_seq), components_host(components), components_dev(nullptr), component_array_host(nullptr), component_array_host_pitch(0),
-		component_array_dev(nullptr), component_array_dev_pitch(0) {
+		component_array_dev(nullptr), component_array_dev_pitch(0), component_progress_host(component_progress), component_progress_dev(nullptr) {
 
 	}
 
 	StochasticCircuit::StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values_host, uint32_t* net_values_dev, size_t net_values_dev_pitch, uint32_t* net_progress_host, uint32_t* net_progress_dev,
 		uint32_t num_components_comb, uint32_t num_components_seq, CircuitComponent** components_host, CircuitComponent** components_dev, char* component_array_host, size_t component_array_host_pitch,
-		char* component_array_dev, size_t component_array_dev_pitch) :
+		char* component_array_dev, size_t component_array_dev_pitch, uint32_t* component_progress_host, uint32_t* component_progress_dev) :
 		host_only(false), sim_length(sim_length), sim_length_words((sim_length + 31) / 32), num_nets(num_nets), net_values_host(net_values_host),
 		net_values_host_pitch((sim_length + 31) / 32 * sizeof(uint32_t)), net_values_dev(net_values_dev), net_values_dev_pitch(net_values_dev_pitch), net_progress_host(net_progress_host),
 		net_progress_dev(net_progress_dev), num_components_comb(num_components_comb), num_components_seq(num_components_seq), num_components(num_components_comb + num_components_seq),
 		components_host(components_host), components_dev(components_dev), component_array_host(component_array_host), component_array_host_pitch(component_array_host_pitch),
-		component_array_dev(component_array_dev), component_array_dev_pitch(component_array_dev_pitch) {
+		component_array_dev(component_array_dev), component_array_dev_pitch(component_array_dev_pitch), component_progress_host(component_progress_host), component_progress_dev(component_progress_dev) {
 
 	}
 
@@ -44,6 +46,7 @@ namespace scsim {
 		free(net_values_host);
 		free(net_progress_host);
 		free(components_host);
+		free(component_progress_host);
 
 		if (!host_only) {
 			cudaFree(net_values_dev);
@@ -51,6 +54,7 @@ namespace scsim {
 			cudaFree(components_dev);
 			free(component_array_host);
 			cudaFree(component_array_dev);
+			cudaFree(component_progress_dev);
 		}
 	}
 
@@ -112,8 +116,7 @@ namespace scsim {
 		cu(cudaMemcpy2D(net_values_dev, net_values_dev_pitch, net_values_host, net_values_host_pitch, net_values_host_pitch, num_nets, cudaMemcpyHostToDevice)); //copy net values
 		cu(cudaMemcpy(net_progress_dev, net_progress_host, num_nets * sizeof(uint32_t), cudaMemcpyHostToDevice)); //copy net progress
 		cu(cudaMemcpy2D(component_array_dev, component_array_dev_pitch, component_array_host, component_array_host_pitch, component_array_host_pitch, num_components, cudaMemcpyHostToDevice)); //copy component array
-
-		for (uint32_t i = 0; i < num_components; i++) components_host[i]->copy_state_host_to_device(); //copy component extended state where required
+		cu(cudaMemcpy(component_progress_dev, component_progress_host, 2 * num_components * sizeof(uint32_t), cudaMemcpyHostToDevice));
 	}
 
 	void StochasticCircuit::copy_data_from_device() {
@@ -122,8 +125,7 @@ namespace scsim {
 		cu(cudaMemcpy2D(net_values_host, net_values_host_pitch, net_values_dev, net_values_dev_pitch, net_values_host_pitch, num_nets, cudaMemcpyDeviceToHost)); //copy net values
 		cu(cudaMemcpy(net_progress_host, net_progress_dev, num_nets * sizeof(uint32_t), cudaMemcpyDeviceToHost)); //copy net progress
 		cu(cudaMemcpy2D(component_array_host, component_array_host_pitch, component_array_dev, component_array_dev_pitch, component_array_host_pitch, num_components, cudaMemcpyDeviceToHost)); //copy component array
-
-		for (uint32_t i = 0; i < num_components; i++) components_host[i]->copy_state_device_to_host(); //copy component extended state where required
+		cu(cudaMemcpy(component_progress_host, component_progress_dev, 2 * num_components * sizeof(uint32_t), cudaMemcpyDeviceToHost));
 	}
 
 	void StochasticCircuit::simulate_circuit_host_only() {
@@ -188,7 +190,7 @@ namespace scsim {
 			int finished_components = 0;
 
 			calc_sim_progress<<<num_blocks_calcp, block_size_calcp>>>(components_dev, num_components); //calculate progress for components
-			copy_components_from_device(); //copy component info to host
+			copy_component_progress_from_device(); //copy component progress to host
 
 			//combinatorial components
 			std::vector<uint32_t> sim_comb;
@@ -333,8 +335,8 @@ namespace scsim {
 		return ret;
 	}
 
-	void StochasticCircuit::copy_components_from_device() {
-		cu(cudaMemcpy2D(component_array_host, component_array_host_pitch, component_array_dev, component_array_dev_pitch, component_array_host_pitch, num_components, cudaMemcpyDeviceToHost));
+	void StochasticCircuit::copy_component_progress_from_device() {
+		cu(cudaMemcpy(component_progress_host, component_progress_dev, 2 * num_components * sizeof(uint32_t), cudaMemcpyDeviceToHost));
 	}
 
 }

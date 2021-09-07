@@ -32,16 +32,13 @@ namespace scsim {
 		CircuitComponent(CircuitComponent&& other) = delete;
 		CircuitComponent& operator=(CircuitComponent&& other) = delete;
 
-		uint32_t current_sim_progress() const;
-		uint32_t current_sim_progress_word() const;
-		uint32_t next_sim_progress() const;
-		uint32_t next_sim_progress_word() const;
+		__host__ __device__ uint32_t current_sim_progress() const;
+		__host__ __device__ uint32_t current_sim_progress_word() const;
+		__host__ __device__ uint32_t next_sim_progress() const;
+		__host__ __device__ uint32_t next_sim_progress_word() const;
 		StochasticCircuit* get_circuit() const;
 
 		virtual void reset_state() = 0;
-
-		virtual void copy_state_host_to_device() = 0;
-		virtual void copy_state_device_to_host() = 0;
 
 		virtual void calculate_simulation_progress_host();
 		__device__ void calculate_simulation_progress_dev();
@@ -66,10 +63,8 @@ namespace scsim {
 		uint32_t* net_progress_dev;
 		uint32_t sim_length;
 
-		uint32_t current_progress;
-		uint32_t current_progress_word;
-		uint32_t next_step_progress;
-		uint32_t next_step_progress_word;
+		uint32_t* progress_host_ptr;
+		uint32_t* progress_dev_ptr;
 
 		size_t* input_offsets_host;
 		size_t* output_offsets_host;
@@ -81,7 +76,7 @@ namespace scsim {
 
 		void calculate_io_offsets();
 
-		virtual void init_with_circuit(StochasticCircuit* circuit);
+		virtual void init_with_circuit(StochasticCircuit* circuit, uint32_t* progress_host_ptr, uint32_t* progress_dev_ptr);
 
 		virtual void link_dev_functions();		
 

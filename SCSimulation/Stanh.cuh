@@ -7,7 +7,7 @@
 namespace scsim {
 
 	//Stochastic tanh function
-	class SCSIMAPI Stanh : public SequentialComponent
+	class SCSIMAPI Stanh : public SequentialComponent<1>
 	{
 	public:
 		/// <param name="k">Number of states: output ~= tanh((k/2) * input)</param>

@@ -8,8 +8,4 @@ namespace scsim {
 
 	}
 
-	CombinatorialComponent::~CombinatorialComponent() {
-
-	}
-
 }

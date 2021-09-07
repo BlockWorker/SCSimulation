@@ -90,7 +90,6 @@
     <CudaCompile Include="CircuitComponent.cuh" />
     <CudaCompile Include="CombinatorialComponent.cu" />
     <CudaCompile Include="CombinatorialComponent.cuh" />
-    <CudaCompile Include="SequentialComponent.cu" />
     <CudaCompile Include="Stanh.cu" />
     <CudaCompile Include="StochasticCircuit.cu" />
     <CudaCompile Include="StochasticCircuit.cuh" />

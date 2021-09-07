@@ -4,7 +4,6 @@
     <CudaCompile Include="CircuitComponent.cu" />
     <CudaCompile Include="CircuitComponent.cuh" />
     <CudaCompile Include="CombinatorialComponent.cuh" />
-    <CudaCompile Include="SequentialComponent.cu" />
     <CudaCompile Include="StochasticCircuit.cu" />
     <CudaCompile Include="StochasticCircuit.cuh" />
     <CudaCompile Include="StochasticCircuitFactory.cu" />

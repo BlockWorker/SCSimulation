@@ -19,6 +19,8 @@ namespace scsim {
 	void Inverter::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset = input_offsets_host[0];
+		auto current_progress_word = current_sim_progress_word();
+		auto next_step_progress_word = next_sim_progress_word();
 
 		for (auto i = current_progress_word; i < next_step_progress_word; i++) {
 			circuit->net_values_host[out_offset + i] = ~circuit->net_values_host[in_offset + i];
@@ -29,8 +31,8 @@ namespace scsim {
 		auto g = (Inverter*)comp;
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset = g->input_offsets_dev[0];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
-		if (i < g->next_step_progress_word) {
+		auto i = g->current_sim_progress_word() + blockIdx.y * blockDim.y + threadIdx.y;
+		if (i < g->next_sim_progress_word()) {
 			g->net_values_dev[out_offset + i] = ~g->net_values_dev[in_offset + i];
 		}
 	}
@@ -48,6 +50,8 @@ namespace scsim {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
+		auto current_progress_word = current_sim_progress_word();
+		auto next_step_progress_word = next_sim_progress_word();
 
 		for (auto i = current_progress_word; i < next_step_progress_word; i++) {
 			circuit->net_values_host[out_offset + i] = circuit->net_values_host[in_offset_1 + i] & circuit->net_values_host[in_offset_2 + i];
@@ -59,8 +63,8 @@ namespace scsim {
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
-		if (i < g->next_step_progress_word) {
+		auto i = g->current_sim_progress_word() + blockIdx.y * blockDim.y + threadIdx.y;
+		if (i < g->next_sim_progress_word()) {
 			g->net_values_dev[out_offset + i] = g->net_values_dev[in_offset_1 + i] & g->net_values_dev[in_offset_2 + i];
 		}
 	}
@@ -78,6 +82,8 @@ namespace scsim {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
+		auto current_progress_word = current_sim_progress_word();
+		auto next_step_progress_word = next_sim_progress_word();
 
 		for (auto i = current_progress_word; i < next_step_progress_word; i++) {
 			circuit->net_values_host[out_offset + i] = ~(circuit->net_values_host[in_offset_1 + i] & circuit->net_values_host[in_offset_2 + i]);
@@ -89,8 +95,8 @@ namespace scsim {
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
-		if (i < g->next_step_progress_word) {
+		auto i = g->current_sim_progress_word() + blockIdx.y * blockDim.y + threadIdx.y;
+		if (i < g->next_sim_progress_word()) {
 			g->net_values_dev[out_offset + i] = ~(g->net_values_dev[in_offset_1 + i] & g->net_values_dev[in_offset_2 + i]);
 		}
 	}
@@ -108,6 +114,8 @@ namespace scsim {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
+		auto current_progress_word = current_sim_progress_word();
+		auto next_step_progress_word = next_sim_progress_word();
 
 		for (auto i = current_progress_word; i < next_step_progress_word; i++) {
 			circuit->net_values_host[out_offset + i] = circuit->net_values_host[in_offset_1 + i] | circuit->net_values_host[in_offset_2 + i];
@@ -119,8 +127,8 @@ namespace scsim {
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
-		if (i < g->next_step_progress_word) {
+		auto i = g->current_sim_progress_word() + blockIdx.y * blockDim.y + threadIdx.y;
+		if (i < g->next_sim_progress_word()) {
 			g->net_values_dev[out_offset + i] = g->net_values_dev[in_offset_1 + i] | g->net_values_dev[in_offset_2 + i];
 		}
 	}
@@ -138,6 +146,8 @@ namespace scsim {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
+		auto current_progress_word = current_sim_progress_word();
+		auto next_step_progress_word = next_sim_progress_word();
 
 		for (auto i = current_progress_word; i < next_step_progress_word; i++) {
 			circuit->net_values_host[out_offset + i] = ~(circuit->net_values_host[in_offset_1 + i] | circuit->net_values_host[in_offset_2 + i]);
@@ -149,8 +159,8 @@ namespace scsim {
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
-		if (i < g->next_step_progress_word) {
+		auto i = g->current_sim_progress_word() + blockIdx.y * blockDim.y + threadIdx.y;
+		if (i < g->next_sim_progress_word()) {
 			g->net_values_dev[out_offset + i] = ~(g->net_values_dev[in_offset_1 + i] | g->net_values_dev[in_offset_2 + i]);
 		}
 	}
@@ -168,6 +178,8 @@ namespace scsim {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
+		auto current_progress_word = current_sim_progress_word();
+		auto next_step_progress_word = next_sim_progress_word();
 
 		for (auto i = current_progress_word; i < next_step_progress_word; i++) {
 			circuit->net_values_host[out_offset + i] = circuit->net_values_host[in_offset_1 + i] ^ circuit->net_values_host[in_offset_2 + i];
@@ -179,8 +191,8 @@ namespace scsim {
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
-		if (i < g->next_step_progress_word) {
+		auto i = g->current_sim_progress_word() + blockIdx.y * blockDim.y + threadIdx.y;
+		if (i < g->next_sim_progress_word()) {
 			g->net_values_dev[out_offset + i] = g->net_values_dev[in_offset_1 + i] ^ g->net_values_dev[in_offset_2 + i];
 		}
 	}
@@ -198,6 +210,8 @@ namespace scsim {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
+		auto current_progress_word = current_sim_progress_word();
+		auto next_step_progress_word = next_sim_progress_word();
 
 		for (auto i = current_progress_word; i < next_step_progress_word; i++) {
 			circuit->net_values_host[out_offset + i] = ~(circuit->net_values_host[in_offset_1 + i] ^ circuit->net_values_host[in_offset_2 + i]);
@@ -209,8 +223,8 @@ namespace scsim {
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
-		if (i < g->next_step_progress_word) {
+		auto i = g->current_sim_progress_word() + blockIdx.y * blockDim.y + threadIdx.y;
+		if (i < g->next_sim_progress_word()) {
 			g->net_values_dev[out_offset + i] = ~(g->net_values_dev[in_offset_1 + i] ^ g->net_values_dev[in_offset_2 + i]);
 		}
 	}
@@ -230,6 +244,8 @@ namespace scsim {
 		auto in_offset_1 = input_offsets_host[0];
 		auto in_offset_2 = input_offsets_host[1];
 		auto sel_offset = input_offsets_host[2];
+		auto current_progress_word = current_sim_progress_word();
+		auto next_step_progress_word = next_sim_progress_word();
 
 		for (auto i = current_progress_word; i < next_step_progress_word; i++) {
 			auto sel = circuit->net_values_host[sel_offset + i];
@@ -243,8 +259,8 @@ namespace scsim {
 		auto in_offset_1 = g->input_offsets_dev[0];
 		auto in_offset_2 = g->input_offsets_dev[1];
 		auto sel_offset = g->input_offsets_dev[2];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
-		if (i < g->next_step_progress_word) {
+		auto i = g->current_sim_progress_word() + blockIdx.y * blockDim.y + threadIdx.y;
+		if (i < g->next_sim_progress_word()) {
 			auto sel = g->net_values_dev[sel_offset + i];
 			g->net_values_dev[out_offset + i] = (g->net_values_dev[in_offset_1 + i] & ~sel) | (g->net_values_dev[in_offset_2 + i] & sel);
 		}
@@ -296,6 +312,8 @@ namespace scsim {
 
 	void MultiplexerN::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
+		auto current_progress_word = current_sim_progress_word();
+		auto next_step_progress_word = next_sim_progress_word();
 
 		for (auto i = current_progress_word; i < next_step_progress_word; i++) {
 			uint32_t word = 0;
@@ -316,8 +334,8 @@ namespace scsim {
 		auto g = (MultiplexerN*)comp;
 		auto out_offset = g->output_offsets_dev[0];
 
-		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
-		if (i < g->next_step_progress_word) {
+		auto i = g->current_sim_progress_word() + blockIdx.y * blockDim.y + threadIdx.y;
+		if (i < g->next_sim_progress_word()) {
 			uint32_t word = 0;
 			for (uint32_t j = 0; j < g->num_mux_inputs; j++) {
 				uint32_t input = g->net_values_dev[g->input_offsets_dev[j] + i];
@@ -340,7 +358,7 @@ namespace scsim {
 	link_device_sim_progress_functions(Delay)
 
 	void Delay::calculate_simulation_progress_host() {
-		current_progress = circuit->sim_length;
+		uint32_t current_progress = circuit->sim_length;
 		for (uint32_t i = 0; i < num_outputs; i++) {
 			auto out_progress = circuit->net_progress_host[outputs_host[i]];
 			if (out_progress < current_progress) { //current progress equals the minimum progress of output nets
@@ -348,7 +366,7 @@ namespace scsim {
 			}
 		}
 
-		next_step_progress = circuit->sim_length;
+		uint32_t next_step_progress = circuit->sim_length;
 		for (uint32_t i = 0; i < num_inputs; i++) {
 			auto in_progress = circuit->net_progress_host[inputs_host[i]];
 			if (in_progress + 1 < next_step_progress) { //next step progress equals the minimum progress of input nets + 1 (delay can progress one step further)
@@ -360,13 +378,15 @@ namespace scsim {
 			next_step_progress = current_progress;
 		}
 
-		current_progress_word = current_progress / 32;
-		next_step_progress_word = (next_step_progress + 31) / 32;
+		*progress_host_ptr = current_progress;
+		*(progress_host_ptr + 1) = next_step_progress;
 	}
 
 	void Delay::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
 		auto in_offset = input_offsets_host[0];
+		auto current_progress_word = current_sim_progress_word();
+		auto next_step_progress_word = next_sim_progress_word();
 
 		auto prev_word = current_progress_word == 0 ? 0 : circuit->net_values_host[in_offset + current_progress_word - 1];
 		for (auto i = current_progress_word; i < next_step_progress_word; i++) {
@@ -378,36 +398,36 @@ namespace scsim {
 
 	__device__ void Delay::_calculate_simulation_progress_dev(CircuitComponent* comp) {
 		auto g = (Delay*)comp;
-		g->current_progress = g->sim_length;
+		uint32_t current_progress = g->sim_length;
 		for (uint32_t i = 0; i < g->num_outputs; i++) {
 			auto out_progress = g->net_progress_dev[g->outputs_dev[i]];
-			if (out_progress < g->current_progress) { //current progress equals the minimum progress of output nets
-				g->current_progress = out_progress;
+			if (out_progress < current_progress) { //current progress equals the minimum progress of output nets
+				current_progress = out_progress;
 			}
 		}
 
-		g->next_step_progress = g->sim_length;
+		uint32_t next_step_progress = g->sim_length;
 		for (uint32_t i = 0; i < g->num_inputs; i++) {
 			auto in_progress = g->net_progress_dev[g->inputs_dev[i]];
-			if (in_progress + 1 < g->next_step_progress) { //next step progress equals the minimum progress of input nets
-				g->next_step_progress = in_progress + 1;
+			if (in_progress + 1 < next_step_progress) { //next step progress equals the minimum progress of input nets
+				next_step_progress = in_progress + 1;
 			}
 		}
 
-		if (g->next_step_progress < g->current_progress) {
-			g->next_step_progress = g->current_progress;
+		if (next_step_progress < current_progress) {
+			next_step_progress = current_progress;
 		}
 
-		g->current_progress_word = g->current_progress / 32;
-		g->next_step_progress_word = (g->next_step_progress + 31) / 32;
+		*g->progress_dev_ptr = current_progress;
+		*(g->progress_dev_ptr + 1) = next_step_progress;
 	}
 
 	__device__ void Delay::_simulate_step_dev(CircuitComponent* comp) {
 		auto g = (Delay*)comp;
 		auto out_offset = g->output_offsets_dev[0];
 		auto in_offset = g->input_offsets_dev[0];
-		auto i = g->current_progress_word + blockIdx.y * blockDim.y + threadIdx.y;
-		if (i < g->next_step_progress_word) {
+		auto i = g->current_sim_progress_word() + blockIdx.y * blockDim.y + threadIdx.y;
+		if (i < g->next_sim_progress_word()) {
 			auto curr_word = g->net_values_dev[in_offset + i];
 			auto prev_word = i == 0 ? 0 : g->net_values_dev[in_offset + i - 1];
 			g->net_values_dev[out_offset + i] = (curr_word >> 1) | (prev_word << 31);

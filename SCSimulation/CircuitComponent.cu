@@ -14,10 +14,8 @@ namespace scsim {
 		dev_ptr = nullptr;
 		simulate_step_dev_ptr = nullptr;
 		calc_progress_dev_ptr = nullptr;
-		current_progress = 0;
-		current_progress_word = 0;
-		next_step_progress = 0;
-		next_step_progress_word = 0;
+		progress_host_ptr = nullptr;
+		progress_dev_ptr = nullptr;
 		inputs_host = (uint32_t*)malloc(num_inputs * sizeof(uint32_t));
 		outputs_host = (uint32_t*)malloc(num_outputs * sizeof(uint32_t));
 		input_offsets_host = (size_t*)malloc(num_inputs * sizeof(size_t));
@@ -41,20 +39,36 @@ namespace scsim {
 		}
 	}
 
-	uint32_t CircuitComponent::current_sim_progress() const {
-		return current_progress;
+	__host__ __device__ uint32_t CircuitComponent::current_sim_progress() const {
+#ifdef __CUDA_ARCH__
+		return *progress_dev_ptr;
+#else
+		return *progress_host_ptr;
+#endif
 	}
 
-	uint32_t CircuitComponent::current_sim_progress_word() const {
-		return current_progress_word;
+	__host__ __device__ uint32_t CircuitComponent::current_sim_progress_word() const {
+#ifdef __CUDA_ARCH__
+		return *progress_dev_ptr / 32;
+#else
+		return *progress_host_ptr / 32;
+#endif
 	}
 
-	uint32_t CircuitComponent::next_sim_progress() const {
-		return next_step_progress;
+	__host__ __device__ uint32_t CircuitComponent::next_sim_progress() const {
+#ifdef __CUDA_ARCH__
+		return *(progress_dev_ptr + 1);
+#else
+		return *(progress_host_ptr + 1);
+#endif
 	}
 
-	uint32_t CircuitComponent::next_sim_progress_word() const {
-		return next_step_progress_word;
+	__host__ __device__ uint32_t CircuitComponent::next_sim_progress_word() const {
+#ifdef __CUDA_ARCH__
+		return (*(progress_dev_ptr + 1) + 31) / 32;
+#else
+		return (*(progress_host_ptr + 1) + 31) / 32;
+#endif
 	}
 
 	StochasticCircuit* CircuitComponent::get_circuit() const {
@@ -62,7 +76,7 @@ namespace scsim {
 	}
 
 	void CircuitComponent::calculate_simulation_progress_host() {
-		current_progress = circuit->sim_length;
+		uint32_t current_progress = circuit->sim_length;
 		for (uint32_t i = 0; i < num_outputs; i++) {
 			auto out_progress = circuit->net_progress_host[outputs_host[i]];
 			if (out_progress < current_progress) { //current progress equals the minimum progress of output nets
@@ -70,7 +84,7 @@ namespace scsim {
 			}
 		}
 
-		next_step_progress = circuit->sim_length;
+		uint32_t next_step_progress = circuit->sim_length;
 		for (uint32_t i = 0; i < num_inputs; i++) {
 			auto in_progress = circuit->net_progress_host[inputs_host[i]];
 			if (in_progress < next_step_progress) { //next step progress equals the minimum progress of input nets
@@ -82,8 +96,8 @@ namespace scsim {
 			next_step_progress = current_progress;
 		}
 
-		current_progress_word = current_progress / 32;
-		next_step_progress_word = (next_step_progress + 31) / 32;
+		*progress_host_ptr = current_progress;
+		*(progress_host_ptr + 1) = next_step_progress;
 	}
 
 	__device__ void CircuitComponent::calculate_simulation_progress_dev() {
@@ -96,13 +110,13 @@ namespace scsim {
 
 	void CircuitComponent::sim_step_finished_host() {
 		for (size_t i = 0; i < num_outputs; i++) {
-			circuit->net_progress_host[outputs_host[i]] = next_step_progress;
+			circuit->net_progress_host[outputs_host[i]] = next_sim_progress();
 		}
 	}
 
 	__device__ void CircuitComponent::sim_step_finished_dev() {
 		for (size_t i = 0; i < num_outputs; i++) {
-			net_progress_dev[outputs_dev[i]] = next_step_progress;
+			net_progress_dev[outputs_dev[i]] = next_sim_progress();
 		}
 	}
 
@@ -131,36 +145,38 @@ namespace scsim {
 	}
 
 	__device__ void CircuitComponent::_calculate_simulation_progress_dev(CircuitComponent* comp) {
-		comp->current_progress = comp->sim_length;
+		uint32_t current_progress = comp->sim_length;
 		for (uint32_t i = 0; i < comp->num_outputs; i++) {
 			auto out_progress = comp->net_progress_dev[comp->outputs_dev[i]];
-			if (out_progress < comp->current_progress) { //current progress equals the minimum progress of output nets
-				comp->current_progress = out_progress;
+			if (out_progress < current_progress) { //current progress equals the minimum progress of output nets
+				current_progress = out_progress;
 			}
 		}
 
-		comp->next_step_progress = comp->sim_length;
+		uint32_t next_step_progress = comp->sim_length;
 		for (uint32_t i = 0; i < comp->num_inputs; i++) {
 			auto in_progress = comp->net_progress_dev[comp->inputs_dev[i]];
-			if (in_progress < comp->next_step_progress) { //next step progress equals the minimum progress of input nets
-				comp->next_step_progress = in_progress;
+			if (in_progress < next_step_progress) { //next step progress equals the minimum progress of input nets
+				next_step_progress = in_progress;
 			}
 		}
 
-		if (comp->next_step_progress < comp->current_progress) {
-			comp->next_step_progress = comp->current_progress;
+		if (next_step_progress < current_progress) {
+			next_step_progress = current_progress;
 		}
 
-		comp->current_progress_word = comp->current_progress / 32;
-		comp->next_step_progress_word = (comp->next_step_progress + 31) / 32;
+		*comp->progress_dev_ptr = current_progress;
+		*(comp->progress_dev_ptr + 1) = next_step_progress;
 	}
 
-	void CircuitComponent::init_with_circuit(StochasticCircuit* circuit) {
+	void CircuitComponent::init_with_circuit(StochasticCircuit* circuit, uint32_t* progress_host_ptr, uint32_t* progress_dev_ptr) {
 		this->circuit = circuit;
+		this->progress_host_ptr = progress_host_ptr;
 		if (!circuit->host_only) {
 			net_values_dev = circuit->net_values_dev;
 			net_progress_dev = circuit->net_progress_dev;
 			sim_length = circuit->sim_length;
+			this->progress_dev_ptr = progress_dev_ptr;
 			cu(cudaMalloc(&input_offsets_dev, num_inputs * sizeof(size_t)));
 			cu(cudaMalloc(&output_offsets_dev, num_outputs * sizeof(size_t)));
 			cu(cudaMalloc(&inputs_dev, num_inputs * sizeof(uint32_t)));
