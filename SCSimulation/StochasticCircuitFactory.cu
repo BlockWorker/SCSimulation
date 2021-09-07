@@ -60,6 +60,11 @@ namespace scsim {
 			uint32_t* net_values_dev, * net_progress_dev;
 			size_t net_pitch_dev;
 
+			//page-lock host-side circuit state if possible
+			cu_ignore_error(cudaHostRegister(net_values_host, sim_length_words * num_nets * sizeof(uint32_t), cudaHostRegisterDefault));
+			cu_ignore_error(cudaHostRegister(net_progress_host, num_nets * sizeof(uint32_t), cudaHostRegisterDefault));
+			cu_ignore_error(cudaHostRegister(component_progress_host, 2 * components.size() * sizeof(uint32_t), cudaHostRegisterDefault));
+
 			//device-side circuit state
 			cu(cudaMallocPitch(&net_values_dev, &net_pitch_dev, sim_length_words * sizeof(uint32_t), num_nets));
 			cu(cudaMalloc(&net_progress_dev, num_nets * sizeof(uint32_t)));
@@ -70,9 +75,10 @@ namespace scsim {
 			if (max_comp_size_misalignment == 0) component_pitch = max_component_size;
 			else component_pitch = max_component_size - max_comp_size_misalignment + max_component_align;
 
-			//component array, host side
+			//component array, host side, page-locked if possible
 			component_array_host = (char*)malloc(components.size() * component_pitch);
 			if (component_array_host == nullptr) throw;
+			cu_ignore_error(cudaHostRegister(component_array_host, components.size() * component_pitch, cudaHostRegisterDefault));
 
 			//component array, device side
 			cu(cudaMallocPitch(&component_array_dev, &component_array_dev_pitch, component_pitch, components.size()));

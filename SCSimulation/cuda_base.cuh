@@ -6,6 +6,7 @@
 
 //wrapper macro to detect CUDA errors
 #define cu(call) do { cudaError_t ___err = (call); if (___err != cudaSuccess) throw scsim::CudaError(___err); } while (false)
+#define cu_ignore_error(call) do { (call); cudaGetLastError(); } while (false)
 
 namespace scsim {
 

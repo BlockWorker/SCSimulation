@@ -43,19 +43,25 @@ namespace scsim {
 			}
 		}
 
+		if (!host_only) {
+			cu_ignore_error(cudaFree(net_values_dev));
+			cu_ignore_error(cudaFree(net_progress_dev));
+			cu_ignore_error(cudaFree(components_dev));
+			cu_ignore_error(cudaFree(component_array_dev));
+			cu_ignore_error(cudaFree(component_progress_dev));
+
+			cu_ignore_error(cudaHostUnregister(component_array_host));
+			cu_ignore_error(cudaHostUnregister(net_values_host));
+			cu_ignore_error(cudaHostUnregister(net_progress_host));
+			cu_ignore_error(cudaHostUnregister(component_progress_host));
+
+			free(component_array_host);
+		}
+
 		free(net_values_host);
 		free(net_progress_host);
 		free(components_host);
 		free(component_progress_host);
-
-		if (!host_only) {
-			cudaFree(net_values_dev);
-			cudaFree(net_progress_dev);
-			cudaFree(components_dev);
-			free(component_array_host);
-			cudaFree(component_array_dev);
-			cudaFree(component_progress_dev);
-		}
 	}
 
 	void StochasticCircuit::reset_circuit() {
