@@ -19,6 +19,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BitwiseAbleComponents.cuh" />
     <ClInclude Include="InverterTestbench.cuh" />
     <ClInclude Include="MLPTestbench.cuh" />
     <ClInclude Include="MuxNTestbench.cuh" />

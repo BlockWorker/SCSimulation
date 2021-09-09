@@ -2,7 +2,7 @@
 
 #include "Testbench.cuh"
 #include "StochasticNumber.cuh"
-#include "BasicCombinatorial.cuh"
+#include "BitwiseAbleComponents.cuh"
 
 class SquarerTestbench : public Testbench
 {
@@ -57,8 +57,8 @@ protected:
 		first_out = factory->add_nets(count + 1).first;
 
 		for (uint32_t i = 0; i <= count; i++) {
-			factory->add_component(new Delay(first_in + i, first_int + i));
-			factory->add_component(new AndGate(first_in + i, first_int + i, first_out + i));
+			factory->add_component(new BitwiseDelay(first_in + i, first_int + i));
+			factory->add_component(new BitwiseAndGate(first_in + i, first_int + i, first_out + i));
 		}
 
 		return num_runs;

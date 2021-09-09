@@ -2,8 +2,6 @@
 
 #include <vector>
 #include <algorithm>
-#include <chrono>
-#include <iostream>
 
 #include "StochasticCircuit.cuh"
 #include "CircuitComponent.cuh"
@@ -102,10 +100,10 @@ namespace scsim {
 		auto actual_length = __min(length, sim_length);
 		auto net_value = net_values_host + (sim_length_words * net);
 
-		auto word_length = length / 32;
+		auto word_length = actual_length / 32;
 		if (word_length > 0) memset(net_value, value ? 0xff : 0x00, word_length * sizeof(uint32_t));
 
-		auto extra_length = length % 32;
+		auto extra_length = actual_length % 32;
 		if (extra_length > 0) {
 			if (value) net_value[word_length] |= (0xffffffff << (32 - extra_length));
 			else net_value[word_length] &= 0xffffffff >> extra_length;
