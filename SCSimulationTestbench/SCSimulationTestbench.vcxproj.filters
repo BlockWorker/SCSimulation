@@ -10,6 +10,7 @@
     <ClInclude Include="SquarerTestbench.cuh" />
     <ClInclude Include="StanhTestbench.cuh" />
     <ClInclude Include="Testbench.cuh" />
+    <ClInclude Include="ChainedInverterTestbench.cuh" />
     <ClInclude Include="BitwiseAbleComponents.cuh">
       <Filter>Components</Filter>
     </ClInclude>

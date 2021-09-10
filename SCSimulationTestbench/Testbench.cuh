@@ -3,6 +3,7 @@
 #include <sstream>
 #include <chrono>
 #include <algorithm>
+#include <iostream>
 #include "StochasticCircuitFactory.cuh"
 #include "StochasticCircuit.cuh"
 
@@ -81,16 +82,16 @@ public:
 				std::cout << "Running iteration " << iteration << " device" << std::endl;
 
 				circuit->reset_circuit();
-				config_circuit(setup, iteration, true); //configure circuit for host iteration
+				uint32_t iter_length = config_circuit(setup, iteration, true); //configure circuit for host iteration
 
 				//simulate circuit and measure time taken
 				auto d_iter_start = std::chrono::steady_clock::now();
-				circuit->copy_data_to_device();
+				circuit->copy_data_to_device(iter_length);
 				auto d_comp_start = std::chrono::steady_clock::now();
 				circuit->simulate_circuit_dev_nocopy();
-				cu(cudaDeviceSynchronize());
+				cudaDeviceSynchronize();
 				auto d_comp_end = std::chrono::steady_clock::now();
-				circuit->copy_data_from_device();
+				circuit->copy_data_from_device(iter_length);
 				auto d_iter_end = std::chrono::steady_clock::now();
 
 				ss << CSV_SEPARATOR << std::chrono::duration_cast<std::chrono::microseconds>(d_iter_end - d_iter_start).count() / 1000.0;
@@ -132,8 +133,8 @@ protected:
 	/// <summary>
 	/// Configure circuit for given iteration index, use "circuit" variable
 	/// </summary>
-	/// <returns>Whether this iteration should be simulated on the host instead of the device</returns>
-	virtual void config_circuit(uint32_t setup, uint32_t iteration, bool device) = 0;
+	/// <returns>How many bits per net are relevant (at most)</returns>
+	virtual uint32_t config_circuit(uint32_t setup, uint32_t iteration, bool device) = 0;
 
 	/// <summary>
 	/// Run post-iteration tasks/calculations if required

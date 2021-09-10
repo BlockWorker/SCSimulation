@@ -10,22 +10,23 @@
 namespace scsim {
 
 	StochasticCircuit::StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values, uint32_t* net_progress, uint32_t num_components_comb, uint32_t num_components_seq,
-		CircuitComponent** components, uint32_t* component_progress) :
+		CircuitComponent** components, uint32_t* component_progress, uint32_t num_component_types) :
 		host_only(true), sim_length(sim_length), sim_length_words((sim_length + 31) / 32), num_nets(num_nets), net_values_host(net_values), net_values_host_pitch((sim_length + 31) / 32 * sizeof(uint32_t)),
 		net_values_dev(nullptr), net_values_dev_pitch(0), net_progress_host(net_progress), net_progress_dev(nullptr), num_components_comb(num_components_comb), num_components_seq(num_components_seq),
 		num_components(num_components_comb + num_components_seq), components_host(components), components_dev(nullptr), component_array_host(nullptr), component_array_host_pitch(0),
-		component_array_dev(nullptr), component_array_dev_pitch(0), component_progress_host(component_progress), component_progress_dev(nullptr) {
+		component_array_dev(nullptr), component_array_dev_pitch(0), component_progress_host(component_progress), component_progress_dev(nullptr), num_component_types(num_component_types) {
 
 	}
 
 	StochasticCircuit::StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values_host, uint32_t* net_values_dev, size_t net_values_dev_pitch, uint32_t* net_progress_host, uint32_t* net_progress_dev,
 		uint32_t num_components_comb, uint32_t num_components_seq, CircuitComponent** components_host, CircuitComponent** components_dev, char* component_array_host, size_t component_array_host_pitch,
-		char* component_array_dev, size_t component_array_dev_pitch, uint32_t* component_progress_host, uint32_t* component_progress_dev) :
+		char* component_array_dev, size_t component_array_dev_pitch, uint32_t* component_progress_host, uint32_t* component_progress_dev, uint32_t num_component_types) :
 		host_only(false), sim_length(sim_length), sim_length_words((sim_length + 31) / 32), num_nets(num_nets), net_values_host(net_values_host),
 		net_values_host_pitch((sim_length + 31) / 32 * sizeof(uint32_t)), net_values_dev(net_values_dev), net_values_dev_pitch(net_values_dev_pitch), net_progress_host(net_progress_host),
 		net_progress_dev(net_progress_dev), num_components_comb(num_components_comb), num_components_seq(num_components_seq), num_components(num_components_comb + num_components_seq),
 		components_host(components_host), components_dev(components_dev), component_array_host(component_array_host), component_array_host_pitch(component_array_host_pitch),
-		component_array_dev(component_array_dev), component_array_dev_pitch(component_array_dev_pitch), component_progress_host(component_progress_host), component_progress_dev(component_progress_dev) {
+		component_array_dev(component_array_dev), component_array_dev_pitch(component_array_dev_pitch), component_progress_host(component_progress_host),
+		component_progress_dev(component_progress_dev), num_component_types(num_component_types) {
 
 	}
 
@@ -115,18 +116,30 @@ namespace scsim {
 	}
 
 	void StochasticCircuit::copy_data_to_device() {
+		copy_data_to_device(sim_length);
+	}
+
+	void StochasticCircuit::copy_data_to_device(uint32_t net_length) {
 		if (host_only) return;
 
-		cu(cudaMemcpy2D(net_values_dev, net_values_dev_pitch, net_values_host, net_values_host_pitch, net_values_host_pitch, num_nets, cudaMemcpyHostToDevice)); //copy net values
+		size_t width = (__min(net_length, sim_length) + 31) / 32 * sizeof(uint32_t);
+
+		cu(cudaMemcpy2D(net_values_dev, net_values_dev_pitch, net_values_host, net_values_host_pitch, width, num_nets, cudaMemcpyHostToDevice)); //copy net values
 		cu(cudaMemcpy(net_progress_dev, net_progress_host, num_nets * sizeof(uint32_t), cudaMemcpyHostToDevice)); //copy net progress
 		cu(cudaMemcpy2D(component_array_dev, component_array_dev_pitch, component_array_host, component_array_host_pitch, component_array_host_pitch, num_components, cudaMemcpyHostToDevice)); //copy component array
 		cu(cudaMemcpy(component_progress_dev, component_progress_host, 2 * num_components * sizeof(uint32_t), cudaMemcpyHostToDevice));
 	}
 
 	void StochasticCircuit::copy_data_from_device() {
+		copy_data_from_device(sim_length);
+	}
+
+	void StochasticCircuit::copy_data_from_device(uint32_t net_length) {
 		if (host_only) return;
 
-		cu(cudaMemcpy2D(net_values_host, net_values_host_pitch, net_values_dev, net_values_dev_pitch, net_values_host_pitch, num_nets, cudaMemcpyDeviceToHost)); //copy net values
+		size_t width = (__min(net_length, sim_length) + 31) / 32 * sizeof(uint32_t);
+
+		cu(cudaMemcpy2D(net_values_host, net_values_host_pitch, net_values_dev, net_values_dev_pitch, width, num_nets, cudaMemcpyDeviceToHost)); //copy net values
 		cu(cudaMemcpy(net_progress_host, net_progress_dev, num_nets * sizeof(uint32_t), cudaMemcpyDeviceToHost)); //copy net progress
 		cu(cudaMemcpy2D(component_array_host, component_array_host_pitch, component_array_dev, component_array_dev_pitch, component_array_host_pitch, num_components, cudaMemcpyDeviceToHost)); //copy component array
 		cu(cudaMemcpy(component_progress_host, component_progress_dev, 2 * num_components * sizeof(uint32_t), cudaMemcpyDeviceToHost));
@@ -190,6 +203,27 @@ namespace scsim {
 
 		std::vector<uint32_t> last_round_possible_progress(num_components, 0);
 
+		std::vector<uint32_t> sim_comb;
+		std::vector<uint32_t> comb_type_counts;
+		std::vector<uint32_t> comb_type_offsets;
+		std::vector<uint32_t> sim_seq;
+		std::vector<uint32_t> seq_type_counts;
+		std::vector<uint32_t> seq_type_offsets;
+
+		uint32_t* sim_comb_dev;
+		uint32_t* comb_type_counts_dev;
+		uint32_t* comb_type_offsets_dev;
+		uint32_t* sim_seq_dev;
+		uint32_t* seq_type_counts_dev;
+		uint32_t* seq_type_offsets_dev;
+
+		cu(cudaMalloc(&sim_comb_dev, num_components_comb * sizeof(uint32_t)));
+		cu(cudaMalloc(&comb_type_counts_dev, num_component_types * sizeof(uint32_t)));
+		cu(cudaMalloc(&comb_type_offsets_dev, num_component_types * sizeof(uint32_t)));
+		cu(cudaMalloc(&sim_seq_dev, num_components_seq * sizeof(uint32_t)));
+		cu(cudaMalloc(&seq_type_counts_dev, num_component_types * sizeof(uint32_t)));
+		cu(cudaMalloc(&seq_type_offsets_dev, num_component_types * sizeof(uint32_t)));
+
 		while (!simulation_finished) { //run simulation rounds until simulation is finished
 			int finished_components = 0;
 
@@ -197,9 +231,10 @@ namespace scsim {
 			copy_component_progress_from_device(); //copy component progress to host
 
 			//combinatorial components
-			std::vector<uint32_t> sim_comb;
-			std::vector<uint32_t> comb_type_counts;
-			std::vector<uint32_t> comb_type_offsets({ 0 });
+			sim_comb.clear();
+			comb_type_counts.clear();
+			comb_type_offsets.clear();
+			comb_type_offsets.push_back(0);
 			uint32_t last_type = 0;
 			uint32_t comb_sim_words = 0;
 			for (uint32_t i = 0; i < num_components_comb; i++) {
@@ -228,14 +263,7 @@ namespace scsim {
 			}
 
 			if (!sim_comb.empty()) { //if combinatorial components need to be simulated
-				uint32_t* sim_comb_dev;
-				uint32_t* comb_type_counts_dev;
-				uint32_t* comb_type_offsets_dev;
-
 				//copy component pointers, counts, offsets to device
-				cu(cudaMalloc(&sim_comb_dev, sim_comb.size() * sizeof(uint32_t)));
-				cu(cudaMalloc(&comb_type_counts_dev, comb_type_counts.size() * sizeof(uint32_t)));
-				cu(cudaMalloc(&comb_type_offsets_dev, comb_type_offsets.size() * sizeof(uint32_t)));
 				cu(cudaMemcpy(sim_comb_dev, sim_comb.data(), sim_comb.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
 				cu(cudaMemcpy(comb_type_counts_dev, comb_type_counts.data(), comb_type_counts.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
 				cu(cudaMemcpy(comb_type_offsets_dev, comb_type_offsets.data(), comb_type_offsets.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
@@ -258,16 +286,13 @@ namespace scsim {
 				uint32_t block_size_fin = __min(sim_comb.size(), 256);
 				uint32_t num_blocks_fin = (sim_comb.size() + block_size_fin - 1) / block_size_fin;
 				finish_sim_step<<<num_blocks_fin, block_size_fin>>>(components_dev, sim_comb_dev, sim_comb.size());
-
-				cu(cudaFree(sim_comb_dev));
-				cu(cudaFree(comb_type_counts_dev));
-				cu(cudaFree(comb_type_offsets_dev));
 			}
 
 			//sequential components, similar to combinatorial as shown above
-			std::vector<uint32_t> sim_seq;
-			std::vector<uint32_t> seq_type_counts;
-			std::vector<uint32_t> seq_type_offsets({ 0 });
+			sim_seq.clear();
+			seq_type_counts.clear();
+			seq_type_offsets.clear();
+			seq_type_offsets.push_back(0);
 			for (uint32_t i = num_components_comb; i < num_components; i++) {
 				CircuitComponent* comp = components_host[i];
 				uint32_t ctype = comp->component_type;
@@ -290,12 +315,6 @@ namespace scsim {
 			}
 
 			if (!sim_seq.empty()) {
-				uint32_t* sim_seq_dev;
-				uint32_t* seq_type_counts_dev;
-				uint32_t* seq_type_offsets_dev;
-				cu(cudaMalloc(&sim_seq_dev, sim_seq.size() * sizeof(uint32_t)));
-				cu(cudaMalloc(&seq_type_counts_dev, seq_type_counts.size() * sizeof(uint32_t)));
-				cu(cudaMalloc(&seq_type_offsets_dev, seq_type_offsets.size() * sizeof(uint32_t)));
 				cu(cudaMemcpy(sim_seq_dev, sim_seq.data(), sim_seq.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
 				cu(cudaMemcpy(seq_type_counts_dev, seq_type_counts.data(), seq_type_counts.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
 				cu(cudaMemcpy(seq_type_offsets_dev, seq_type_offsets.data(), seq_type_offsets.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
@@ -309,14 +328,17 @@ namespace scsim {
 				uint32_t block_size_fin = __min(sim_seq.size(), 256);
 				uint32_t num_blocks_fin = (sim_seq.size() + block_size_fin - 1) / block_size_fin;
 				finish_sim_step<<<num_blocks_fin, block_size_fin>>>(components_dev, sim_seq_dev, sim_seq.size());
-
-				cu(cudaFree(sim_seq_dev));
-				cu(cudaFree(seq_type_counts_dev));
-				cu(cudaFree(seq_type_offsets_dev));
 			}
 
 			if (finished_components == num_components) simulation_finished = true; //done if all components finished
 		}
+
+		cu(cudaFree(sim_comb_dev));
+		cu(cudaFree(comb_type_counts_dev));
+		cu(cudaFree(comb_type_offsets_dev));
+		cu(cudaFree(sim_seq_dev));
+		cu(cudaFree(seq_type_counts_dev));
+		cu(cudaFree(seq_type_offsets_dev));
 	}
 
 	StochasticNumber* StochasticCircuit::get_net_value(uint32_t net) {

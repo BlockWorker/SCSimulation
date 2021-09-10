@@ -47,11 +47,21 @@ namespace scsim {
 		char* component_array_host, * component_array_dev;
 		size_t component_array_dev_pitch;
 
-		std::sort(components.begin(), components.end(), [](auto a, auto b) { return a->component_type < b->component_type; }); //sort components by type for automatic grouping during simulation
+		std::stable_sort(components.begin(), components.end(), [](auto a, auto b) { return a->component_type < b->component_type; }); //sort components by type for automatic grouping during simulation
 		memcpy(components_host, components.data(), components.size() * sizeof(CircuitComponent*));
 
+		uint32_t num_component_types = 0;
+		uint32_t last_type = 0;
+		for (uint32_t i = 0; i < components.size(); i++) {
+			uint32_t type = components[i]->component_type;
+			if (type != last_type) {
+				num_component_types++;
+				last_type = type;
+			}
+		}
+
 		if (host_only) { //host-only circuit: create and initialize components, that's all
-			circuit = new StochasticCircuit(sim_length, num_nets, net_values_host, net_progress_host, num_comb_comp, num_seq_comp, components_host, component_progress_host);
+			circuit = new StochasticCircuit(sim_length, num_nets, net_values_host, net_progress_host, num_comb_comp, num_seq_comp, components_host, component_progress_host, num_component_types);
 			for (uint32_t i = 0; i < components.size(); i++) {
 				components_host[i]->init_with_circuit(circuit, component_progress_host + (2 * i), nullptr);
 			}
@@ -83,8 +93,8 @@ namespace scsim {
 			//component array, device side
 			cu(cudaMallocPitch(&component_array_dev, &component_array_dev_pitch, component_pitch, components.size()));
 
-			circuit = new StochasticCircuit(sim_length, num_nets, net_values_host, net_values_dev, net_pitch_dev, net_progress_host, net_progress_dev, num_comb_comp, num_seq_comp,
-				components_host, components_dev, component_array_host, component_pitch, component_array_dev, component_array_dev_pitch, component_progress_host, component_progress_dev);
+			circuit = new StochasticCircuit(sim_length, num_nets, net_values_host, net_values_dev, net_pitch_dev, net_progress_host, net_progress_dev, num_comb_comp, num_seq_comp, components_host,
+				components_dev, component_array_host, component_pitch, component_array_dev, component_array_dev_pitch, component_progress_host, component_progress_dev, num_component_types);
 
 			for (uint32_t i = 0; i < components.size(); i++) {
 				auto comp = components_host[i];

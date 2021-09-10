@@ -77,7 +77,7 @@ protected:
 		return num_iterations;
 	}
 
-	virtual void config_circuit(uint32_t setup, uint32_t iteration, bool device) override {
+	virtual uint32_t config_circuit(uint32_t setup, uint32_t iteration, bool device) override {
 		uint32_t iter_sim_length = min_sim_length;
 		for (uint32_t i = 0; i < iteration; i++) {
 			iter_sim_length *= 2;
@@ -90,6 +90,12 @@ protected:
 		}
 
 		if (device) for (uint32_t i = 0; i < num_count; i++) delete numbers[i];
+
+		return iter_sim_length;
+	}
+
+	virtual void write_additional_column_titles(std::stringstream& ss) override {
+		ss << CSV_SEPARATOR << "It0 bits: " << min_sim_length;
 	}
 
 private:

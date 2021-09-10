@@ -6,6 +6,7 @@
 #include "StanhTestbench.cuh"
 #include "SquarerTestbench.cuh"
 #include "InverterTestbench.cuh"
+#include "ChainedInverterTestbench.cuh"
 #include "MuxNTestbench.cuh"
 #include "MLPTestbench.cuh"
 
@@ -41,6 +42,7 @@ void run() {
 	runBench(new StanhTestbench(MIN_SN_LENGTH, 6, 14, 10), "results\\stanh.csv");
 	runBench(new MLPTestbench(MIN_SN_LENGTH_MLP, 128, 8, 8), "results\\mlp.csv");
 	//*/
+	//runBench(new ChainedInverterTestbench(MIN_SN_LENGTH, 13, 10), "results\\chained_inverter.csv");
 }
 
 int main() {
