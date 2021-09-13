@@ -22,7 +22,8 @@
     <ClInclude Include="ChainedInverterTestbench.cuh" />
     <ClInclude Include="BitwiseAbleComponents.cuh" />
     <ClInclude Include="InverterTestbench.cuh" />
-    <ClInclude Include="MLPTestbench.cuh" />
+    <ClInclude Include="MLPLayerCountTestbench.cuh" />
+    <ClInclude Include="MLPLayerSizeTestbench.cuh" />
     <ClInclude Include="MuxNTestbench.cuh" />
     <ClInclude Include="SquarerTestbench.cuh" />
     <ClInclude Include="StanhTestbench.cuh" />

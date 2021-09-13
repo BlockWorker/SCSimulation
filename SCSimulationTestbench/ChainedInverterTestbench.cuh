@@ -77,7 +77,7 @@ protected:
 	}
 
 	virtual void write_additional_column_titles(std::stringstream& ss) override {
-		ss << CSV_SEPARATOR << "Order" << CSV_SEPARATOR << "It0 bits: " << min_sim_length;
+		ss << CSV_SEPARATOR << "Order" << CSV_SEPARATOR << min_sim_length;
 	}
 
 	//calculate and log RMSE of generated SN vs. expected value, RMSE of the circuit calculation itself, and total RMSE

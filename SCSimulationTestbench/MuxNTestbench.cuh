@@ -99,7 +99,7 @@ protected:
 	}
 
 	virtual void write_additional_column_titles(std::stringstream& ss) override {
-		ss << CSV_SEPARATOR << "It0 bits: " << min_sim_length;
+		ss << CSV_SEPARATOR << min_sim_length;
 	}
 
 };

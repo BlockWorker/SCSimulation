@@ -7,12 +7,12 @@
 #include "BasicCombinatorial.cuh"
 #include "Stanh.cuh"
 
-class MLPTestbench : public Testbench
+class MLPLayerCountTestbench : public Testbench
 {
 public:
 	/// <param name="layersize">Number of neurons per layer</param>
 	/// <param name="setups">Number of setups, setup i contains i+1 layers</param>
-	MLPTestbench(uint32_t min_sim_length, uint32_t layersize, uint32_t setups, uint32_t iter_runs) : Testbench(setups, iter_runs), min_sim_length(min_sim_length), layersize(layersize),
+	MLPLayerCountTestbench(uint32_t min_sim_length, uint32_t layersize, uint32_t setups, uint32_t iter_runs) : Testbench(setups, iter_runs), min_sim_length(min_sim_length), layersize(layersize),
 		iter_runs(iter_runs), selectcount((uint32_t)ceil(log2(layersize))), max_sim_length(min_sim_length << (iter_runs - 1)) {
 		numbers = nullptr;
 		vals = nullptr;
@@ -20,9 +20,11 @@ public:
 		states = 2 * (uint32_t)round(logn + (log2(max_sim_length) * layersize) / (33.27 * logn));
 		num_count = 0;
 		first_in = 0;
+		random_num_count = 0;
+		select_num_count = 0;
 	}
 
-	virtual ~MLPTestbench() {
+	virtual ~MLPLayerCountTestbench() {
 		//if (numbers != nullptr) for (uint32_t i = 0; i < num_count; i++) delete numbers[i];
 		free(numbers);
 		free(vals);
@@ -95,7 +97,7 @@ protected:
 	}
 
 	virtual void write_additional_column_titles(std::stringstream& ss) override {
-		ss << CSV_SEPARATOR << "It0 bits: " << min_sim_length;
+		ss << CSV_SEPARATOR << min_sim_length;
 	}
 
 private:

@@ -5,7 +5,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InverterTestbench.cuh" />
-    <ClInclude Include="MLPTestbench.cuh" />
     <ClInclude Include="MuxNTestbench.cuh" />
     <ClInclude Include="SquarerTestbench.cuh" />
     <ClInclude Include="StanhTestbench.cuh" />
@@ -14,6 +13,8 @@
     <ClInclude Include="BitwiseAbleComponents.cuh">
       <Filter>Components</Filter>
     </ClInclude>
+    <ClInclude Include="MLPLayerCountTestbench.cuh" />
+    <ClInclude Include="MLPLayerSizeTestbench.cuh" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Components">
