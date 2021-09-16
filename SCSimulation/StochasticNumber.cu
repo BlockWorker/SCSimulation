@@ -119,16 +119,17 @@ namespace scsim {
 	}
 
 	//maximum number of SN words to be generated in a single batch - limited to prevent out-of-memory errors
-	constexpr uint32_t MAX_CURAND_BATCH_WORDS = 1 << 20;
+	constexpr uint32_t MAX_CURAND_BATCH_WORDS = 1 << 19;
 
 	void StochasticNumber::generate_multiple_curand(StochasticNumber** numbers, uint32_t length, double* values_unipolar, size_t count) {
 		auto word_length = (length + 31) / 32;
 
 		auto gen_length = word_length * 32; //device code only produces entire words for efficiency -> this is the true number of bits generated per number
 
-		double* rand_dev, * val_dev;
-		uint32_t* sn_dev;
-		size_t sn_dev_pitch;
+		double* rand_dev = nullptr;
+		double* val_dev = nullptr;
+		uint32_t* sn_dev = nullptr;
+		size_t sn_dev_pitch = 0;
 
 		uint32_t max_batch = MAX_CURAND_BATCH_WORDS / word_length; //number of SNs in one batch
 
@@ -139,28 +140,36 @@ namespace scsim {
 		for (uint32_t batch_offset = 0; batch_offset < count; batch_offset += max_batch) {
 			uint32_t batch_size = __min(count - batch_offset, max_batch);
 
-			cu(cudaMalloc(&rand_dev, batch_size * gen_length * sizeof(double)));
-			cu(cudaMalloc(&val_dev, batch_size * sizeof(double)));
-			cu(cudaMallocPitch(&sn_dev, &sn_dev_pitch, word_length * sizeof(uint32_t), batch_size));
+			try {
+				cu(cudaMalloc(&rand_dev, batch_size * gen_length * sizeof(double)));
+				cu(cudaMalloc(&val_dev, batch_size * sizeof(double)));
+				cu(cudaMallocPitch(&sn_dev, &sn_dev_pitch, word_length * sizeof(uint32_t), batch_size));
 
-			cu(cudaMemcpy(val_dev, values_unipolar + batch_offset, batch_size * sizeof(double), cudaMemcpyHostToDevice));
+				cu(cudaMemcpy(val_dev, values_unipolar + batch_offset, batch_size * sizeof(double), cudaMemcpyHostToDevice));
 
-			cur(curandGenerateUniformDouble(gen, rand_dev, batch_size * gen_length)); //generate one random double for each bit to be generated
+				cur(curandGenerateUniformDouble(gen, rand_dev, batch_size * gen_length)); //generate one random double for each bit to be generated
 
-			auto block_size = __min(word_length, 256);
-			dim3 grid_size(batch_size, (word_length + block_size - 1) / block_size);
+				auto block_size = __min(word_length, 256);
+				dim3 grid_size(batch_size, (word_length + block_size - 1) / block_size);
 
-			sngen_kern<<<grid_size, block_size>>>(rand_dev, val_dev, sn_dev, sn_dev_pitch, gen_length, word_length); //generate actual SNs on device
+				sngen_kern<<<grid_size, block_size>>>(rand_dev, val_dev, sn_dev, sn_dev_pitch, gen_length, word_length); //generate actual SNs on device
 
-			//create SN objects based on device data
-			for (size_t i = 0; i < batch_size; i++) {
-				auto data_ptr = (uint32_t*)((char*)sn_dev + (i * sn_dev_pitch));
-				numbers[batch_offset + i] = new StochasticNumber(length, data_ptr, true);
+				//create SN objects based on device data
+				for (size_t i = 0; i < batch_size; i++) {
+					auto data_ptr = (uint32_t*)((char*)sn_dev + (i * sn_dev_pitch));
+					numbers[batch_offset + i] = new StochasticNumber(length, data_ptr, true);
+				}
+			} catch (CudaError& error) {
+				cu_ignore_error(cudaFree(rand_dev));
+				cu_ignore_error(cudaFree(val_dev));
+				cu_ignore_error(cudaFree(sn_dev));
+
+				throw error;
 			}
 
-			cu(cudaFree(rand_dev));
-			cu(cudaFree(val_dev));
-			cu(cudaFree(sn_dev));
+			cu_ignore_error(cudaFree(rand_dev));
+			cu_ignore_error(cudaFree(val_dev));
+			cu_ignore_error(cudaFree(sn_dev));
 		}
 
 		cur(curandDestroyGenerator(gen));

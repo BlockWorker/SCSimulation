@@ -80,7 +80,6 @@ protected:
 		ss << CSV_SEPARATOR << "Order" << CSV_SEPARATOR << min_sim_length;
 	}
 
-	//calculate and log RMSE of generated SN vs. expected value, RMSE of the circuit calculation itself, and total RMSE
 	virtual void post_setup(uint32_t setup, std::stringstream& ss) override {
 		ss << CSV_SEPARATOR << (setup % 2 == 0) ? "Forward" : "Backward";
 	}

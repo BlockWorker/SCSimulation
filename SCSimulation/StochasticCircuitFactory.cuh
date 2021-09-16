@@ -17,6 +17,7 @@ namespace scsim {
 	{
 	public:
 		StochasticCircuitFactory();
+		~StochasticCircuitFactory();
 
 		void reset();
 
@@ -52,6 +53,17 @@ namespace scsim {
 		std::vector<bool> driven_nets;
 		size_t max_component_size;
 		size_t max_component_align;
+
+		uint32_t* net_values_host;
+		uint32_t* net_values_dev;
+		uint32_t* net_progress_host;
+		uint32_t* net_progress_dev;
+		CircuitComponent** components_host;
+		CircuitComponent** components_dev;
+		uint32_t* component_progress_host;
+		uint32_t* component_progress_dev;
+		char* component_array_host;
+		char* component_array_dev;
 
 		uint32_t add_component_internal(CircuitComponent* component);
 

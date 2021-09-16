@@ -15,6 +15,7 @@
     </ClInclude>
     <ClInclude Include="MLPLayerCountTestbench.cuh" />
     <ClInclude Include="MLPLayerSizeTestbench.cuh" />
+    <ClInclude Include="CycleTestbench.cuh" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Components">

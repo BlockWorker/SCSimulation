@@ -31,7 +31,7 @@ namespace scsim {
 		free(outputs_host);
 		free(input_offsets_host);
 		free(output_offsets_host);
-		if (!circuit->host_only) {
+		if (circuit != nullptr && !circuit->host_only) {
 			cu_ignore_error(cudaFree(inputs_dev));
 			cu_ignore_error(cudaFree(outputs_dev));
 			cu_ignore_error(cudaFree(input_offsets_dev));

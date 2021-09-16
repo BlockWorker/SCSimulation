@@ -14,6 +14,29 @@ namespace scsim {
 		reset();
 	}
 
+	StochasticCircuitFactory::~StochasticCircuitFactory() {
+		for (auto i = 0; i < components.size(); i++) {
+			delete components[i];
+		}
+
+		cu_ignore_error(cudaHostUnregister(net_values_host));
+		cu_ignore_error(cudaHostUnregister(net_progress_host));
+		cu_ignore_error(cudaHostUnregister(component_progress_host));
+		cu_ignore_error(cudaHostUnregister(component_array_host));
+
+		free(net_values_host);
+		free(net_progress_host);
+		free(components_host);
+		free(component_progress_host);
+		free(component_array_host);
+
+		cu_ignore_error(cudaFree(net_values_dev));
+		cu_ignore_error(cudaFree(net_progress_dev));
+		cu_ignore_error(cudaFree(components_dev));
+		cu_ignore_error(cudaFree(component_progress_dev));
+		cu_ignore_error(cudaFree(component_array_dev));
+	}
+
 	void StochasticCircuitFactory::reset() {
 		host_only = false;
 		sim_length = 0;
@@ -24,6 +47,17 @@ namespace scsim {
 		driven_nets.clear();
 		max_component_size = 0;
 		max_component_align = 0;
+
+		net_values_host = nullptr;
+		net_values_dev = nullptr;
+		net_progress_host = nullptr;
+		net_progress_dev = nullptr;
+		components_host = nullptr;
+		components_dev = nullptr;
+		component_progress_host = nullptr;
+		component_progress_dev = nullptr;
+		component_array_host = nullptr;
+		component_array_dev = nullptr;
 	}
 
 	StochasticCircuit* StochasticCircuitFactory::create_circuit() {
@@ -34,17 +68,16 @@ namespace scsim {
 		size_t sim_length_words = (sim_length + 31) / 32;
 
 		//host-side circuit state
-		uint32_t* net_values_host = (uint32_t*)malloc(sim_length_words * num_nets * sizeof(uint32_t));
-		uint32_t* net_progress_host = (uint32_t*)calloc(num_nets, sizeof(uint32_t));
-		CircuitComponent** components_host = (CircuitComponent**)malloc(components.size() * sizeof(CircuitComponent*));
-		CircuitComponent** components_dev = nullptr;
-		uint32_t* component_progress_host = (uint32_t*)calloc(2 * components.size(), sizeof(uint32_t));
-		uint32_t* component_progress_dev = nullptr;
+		net_values_host = (uint32_t*)malloc(sim_length_words * num_nets * sizeof(uint32_t));
+		net_progress_host = (uint32_t*)calloc(num_nets, sizeof(uint32_t));
+		components_host = (CircuitComponent**)malloc(components.size() * sizeof(CircuitComponent*));
+		components_dev = nullptr;
+		component_progress_host = (uint32_t*)calloc(2 * components.size(), sizeof(uint32_t));
+		component_progress_dev = nullptr;
 
 		if (net_values_host == nullptr || net_progress_host == nullptr || components_host == nullptr) throw;
 
 		size_t component_pitch;
-		char* component_array_host, * component_array_dev;
 		size_t component_array_dev_pitch;
 
 		std::stable_sort(components.begin(), components.end(), [](auto a, auto b) { return a->component_type < b->component_type; }); //sort components by type for automatic grouping during simulation
@@ -67,7 +100,6 @@ namespace scsim {
 			}
 		}
 		else {
-			uint32_t* net_values_dev, * net_progress_dev;
 			size_t net_pitch_dev;
 
 			//page-lock host-side circuit state if possible
@@ -107,8 +139,9 @@ namespace scsim {
 				comp->init_with_circuit(circuit, component_progress_host + (2 * i), component_progress_dev + (2 * i));
 
 				memcpy(components_host[i], comp, comp->mem_obj_size); //copy component to component array
-				operator delete(comp); //free original allocation for component (without deconstructing the actual component)
 			}
+
+			for (auto comp : components) operator delete(comp); //free original allocation for component (without deconstructing the actual component)
 
 			circuit->reset_circuit();
 			circuit->copy_data_to_device();

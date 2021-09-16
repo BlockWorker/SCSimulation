@@ -71,7 +71,7 @@ protected:
 		}
 
 		if (!device) {
-			numbers = (StochasticNumber**)malloc((count + 1) * sizeof(StochasticNumber*));
+			numbers = (StochasticNumber**)calloc(count + 1, sizeof(StochasticNumber*));
 			vals = (double*)malloc((count + 1) * sizeof(double));
 			for (uint32_t i = 0; i <= count; i++) {
 				vals[i] = (double)i / (double)count;

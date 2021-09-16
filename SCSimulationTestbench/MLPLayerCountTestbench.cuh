@@ -25,7 +25,7 @@ public:
 	}
 
 	virtual ~MLPLayerCountTestbench() {
-		//if (numbers != nullptr) for (uint32_t i = 0; i < num_count; i++) delete numbers[i];
+		if (numbers != nullptr) for (uint32_t i = 0; i < num_count; i++) delete numbers[i];
 		free(numbers);
 		free(vals);
 	}
@@ -63,9 +63,7 @@ protected:
 			build_layer(first_int + (i - 1) * layersize, first_weight + i * layersize * layersize, first_sel + i * selectcount, first_int + i * layersize);
 		}
 
-		free(numbers);
 		free(vals);
-		numbers = (StochasticNumber**)malloc(num_count * sizeof(StochasticNumber*));
 		vals = (double*)malloc(num_count * sizeof(double));
 		std::default_random_engine eng{ std::random_device()() };
 		std::uniform_real_distribution<double> dist(0.0, 1.0);
@@ -85,13 +83,20 @@ protected:
 			iter_sim_length *= 2;
 		}
 
-		if (!device) StochasticNumber::generate_multiple_curand(numbers, iter_sim_length, vals, num_count);
+		if (!device) {
+			numbers = (StochasticNumber**)calloc(num_count, sizeof(StochasticNumber*));
+			StochasticNumber::generate_multiple_curand(numbers, iter_sim_length, vals, num_count);
+		}
 
 		for (uint32_t i = 0; i < num_count; i++) {
 			circuit->set_net_value(first_in + i, numbers[i]);
 		}
 
-		if (device) for (uint32_t i = 0; i < num_count; i++) delete numbers[i];
+		if (device) {
+			for (uint32_t i = 0; i < num_count; i++) delete numbers[i];
+			free(numbers);
+			numbers = nullptr;
+		}
 
 		return iter_sim_length;
 	}
