@@ -47,6 +47,7 @@ namespace scsim {
 		driven_nets.clear();
 		max_component_size = 0;
 		max_component_align = 0;
+		max_component_io = 0;
 
 		net_values_host = nullptr;
 		net_values_dev = nullptr;
@@ -96,7 +97,7 @@ namespace scsim {
 		if (host_only) { //host-only circuit: create and initialize components, that's all
 			circuit = new StochasticCircuit(sim_length, num_nets, net_values_host, net_progress_host, num_comb_comp, num_seq_comp, components_host, component_progress_host, num_component_types);
 			for (uint32_t i = 0; i < components.size(); i++) {
-				components_host[i]->init_with_circuit(circuit, component_progress_host + (2 * i), nullptr);
+				components_host[i]->init_with_circuit(circuit, component_progress_host + (2 * i), nullptr, nullptr);
 			}
 		}
 		else {
@@ -128,18 +129,28 @@ namespace scsim {
 			circuit = new StochasticCircuit(sim_length, num_nets, net_values_host, net_values_dev, net_pitch_dev, net_progress_host, net_progress_dev, num_comb_comp, num_seq_comp, components_host,
 				components_dev, component_array_host, component_pitch, component_array_dev, component_array_dev_pitch, component_progress_host, component_progress_dev, num_component_types);
 
+			size_t* calc_scratchpad;
+			CircuitComponent** dev_pointers;
+			cu(cudaMallocHost(&calc_scratchpad, max_component_io * sizeof(size_t)));
+			cu(cudaMallocHost(&dev_pointers, components.size() * sizeof(CircuitComponent*)));
+
 			for (uint32_t i = 0; i < components.size(); i++) {
 				auto comp = components_host[i];
 
 				components_host[i] = (CircuitComponent*)(component_array_host + i * component_pitch); //redirect component pointers to component array
 
 				comp->dev_ptr = (CircuitComponent*)(component_array_dev + i * component_array_dev_pitch); //link components's own device pointer
-				cu(cudaMemcpy((void*)(components_dev + i), &comp->dev_ptr, sizeof(CircuitComponent*), cudaMemcpyHostToDevice)); //direct device-side pointers to component array
+				dev_pointers[i] = comp->dev_ptr; //direct device-side pointers to component array
 
-				comp->init_with_circuit(circuit, component_progress_host + (2 * i), component_progress_dev + (2 * i));
-
+				comp->init_with_circuit(circuit, component_progress_host + (2 * i), component_progress_dev + (2 * i), calc_scratchpad);
+				
 				memcpy(components_host[i], comp, comp->mem_obj_size); //copy component to component array
 			}
+
+			cu(cudaMemcpy(components_dev, dev_pointers, components.size() * sizeof(CircuitComponent*), cudaMemcpyHostToDevice));
+
+			cu_ignore_error(cudaFreeHost(calc_scratchpad));
+			cu_ignore_error(cudaFreeHost(dev_pointers));
 
 			for (auto comp : components) operator delete(comp); //free original allocation for component (without deconstructing the actual component)
 
@@ -200,6 +211,7 @@ namespace scsim {
 		//remember largest component memory size and alignment in circuit (minimum component array pitch)
 		if (component->mem_obj_size > max_component_size) max_component_size = component->mem_obj_size;
 		if (component->mem_align > max_component_align) max_component_align = component->mem_align;
+		if (component->num_inputs + component->num_outputs > max_component_io) max_component_io = component->num_inputs + component->num_outputs;
 
 		components.push_back(component);
 

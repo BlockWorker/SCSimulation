@@ -3,6 +3,9 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <chrono>
+#include <thread>
+
 #include "StanhTestbench.cuh"
 #include "SquarerTestbench.cuh"
 #include "InverterTestbench.cuh"
@@ -41,7 +44,7 @@ std::pair<uint32_t, uint32_t> max_setups_nn(uint64_t max_mem, uint32_t layercoun
 	while (max_setups <= 7) {
 		uint32_t setup_layersize = 16 * (1 << (max_setups - 1));
 		uint32_t setup_components = layercount * setup_layersize * (setup_layersize + 2);
-		uint32_t setup_nets = setup_layersize * (1 + layercount * (2 * setup_layersize + (uint32_t)ceil(log2(setup_layersize)) + 2));
+		uint32_t setup_nets = setup_layersize + layercount * ((uint32_t)ceil(log2(setup_layersize)) + setup_layersize * (2 * setup_layersize + 2));
 		uint64_t setup_bytes = MEM_PER_COMP * setup_components + sizeof(uint32_t) * (min_sim_len_words + 1) * setup_nets;
 		if (setup_bytes > max_mem) {
 			max_setups--;
@@ -124,9 +127,9 @@ void run(uint64_t max_mem) {
 		//*
 		sim_bitwise = true;
 		std::cout << "**** Running bitwise inverter testbench ****" << std::endl;
-		runBench(new InverterTestbench(MIN_SN_LENGTH, 14, 10), dir, "inverter_bitwise.csv");
+		runBench(new InverterTestbench(MIN_SN_LENGTH, max_setups_1c2n, 10), dir, "inverter_bitwise.csv");
 		std::cout << "**** Running bitwise squarer testbench ****" << std::endl;
-		runBench(new SquarerTestbench(MIN_SN_LENGTH, 13, 10), dir, "squarer_bitwise.csv");
+		runBench(new SquarerTestbench(MIN_SN_LENGTH, max_setups_2c2n, 10), dir, "squarer_bitwise.csv");
 		//*/
 		//*
 		sim_bitwise = false;
@@ -162,7 +165,9 @@ int main() {
 		cu(cudaGetDeviceProperties(&prop, 0));
 		uint64_t mem_bytes = prop.totalGlobalMem;
 		uint64_t sim_max_mem = mem_bytes - RESERVED_MEM;
-		std::cout << "Detected device with " << mem_bytes << " bytes of memory" << std::endl;
+		std::cout << "Detected device with " << (mem_bytes / (double)(1 << 30)) << " GB of memory" << std::endl;
+
+		std::this_thread::sleep_for(std::chrono::seconds(5));
 
 		run(sim_max_mem);
 	} catch (std::exception e) {

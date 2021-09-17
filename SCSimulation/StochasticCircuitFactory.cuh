@@ -53,6 +53,7 @@ namespace scsim {
 		std::vector<bool> driven_nets;
 		size_t max_component_size;
 		size_t max_component_align;
+		uint32_t max_component_io;
 
 		uint32_t* net_values_host;
 		uint32_t* net_values_dev;

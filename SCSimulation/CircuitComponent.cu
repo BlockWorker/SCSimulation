@@ -16,10 +16,11 @@ namespace scsim {
 		calc_progress_dev_ptr = nullptr;
 		progress_host_ptr = nullptr;
 		progress_dev_ptr = nullptr;
-		inputs_host = (uint32_t*)malloc(num_inputs * sizeof(uint32_t));
-		outputs_host = (uint32_t*)malloc(num_outputs * sizeof(uint32_t));
-		input_offsets_host = (size_t*)malloc(num_inputs * sizeof(size_t));
-		output_offsets_host = (size_t*)malloc(num_outputs * sizeof(size_t));
+		size_t io_dwords = (num_inputs + num_outputs + 1) / 2;
+		inputs_host = (uint32_t*)malloc((io_dwords + num_inputs + num_outputs) * sizeof(size_t));
+		outputs_host = inputs_host + num_inputs;
+		input_offsets_host = ((size_t*)inputs_host) + io_dwords;
+		output_offsets_host = input_offsets_host + num_inputs;
 		inputs_dev = nullptr;
 		outputs_dev = nullptr;
 		input_offsets_dev = nullptr;
@@ -28,14 +29,8 @@ namespace scsim {
 
 	CircuitComponent::~CircuitComponent() {
 		free(inputs_host);
-		free(outputs_host);
-		free(input_offsets_host);
-		free(output_offsets_host);
 		if (circuit != nullptr && !circuit->host_only) {
 			cu_ignore_error(cudaFree(inputs_dev));
-			cu_ignore_error(cudaFree(outputs_dev));
-			cu_ignore_error(cudaFree(input_offsets_dev));
-			cu_ignore_error(cudaFree(output_offsets_dev));
 		}
 	}
 
@@ -120,28 +115,29 @@ namespace scsim {
 		}
 	}
 
-	void CircuitComponent::calculate_io_offsets() {
-		size_t* dev_in = (size_t*)malloc(num_inputs * sizeof(size_t));
-		size_t* dev_out = (size_t*)malloc(num_outputs * sizeof(size_t));
-		if (dev_in == nullptr || dev_out == nullptr) return;
-
+	void CircuitComponent::calculate_io_offsets(size_t* calc_scratchpad) {
 		for (uint32_t i = 0; i < num_inputs; i++) {
 			input_offsets_host[i] = (size_t)circuit->sim_length_words * inputs_host[i];
-			dev_in[i] = (size_t)circuit->net_values_dev_pitch / sizeof(uint32_t) * inputs_host[i];
 		}
 
 		for (uint32_t i = 0; i < num_outputs; i++) {
 			output_offsets_host[i] = (size_t)circuit->sim_length_words * outputs_host[i];
-			dev_out[i] = (size_t)circuit->net_values_dev_pitch / sizeof(uint32_t) * outputs_host[i];
 		}
 
 		if (!circuit->host_only) {
-			cu(cudaMemcpy(input_offsets_dev, dev_in, num_inputs * sizeof(size_t), cudaMemcpyHostToDevice));
-			cu(cudaMemcpy(output_offsets_dev, dev_out, num_outputs * sizeof(size_t), cudaMemcpyHostToDevice));
-		}
+			size_t* dev_in = calc_scratchpad;
+			size_t* dev_out = calc_scratchpad + num_inputs;
 
-		free(dev_in);
-		free(dev_out);
+			for (uint32_t i = 0; i < num_inputs; i++) {
+				dev_in[i] = (size_t)circuit->net_values_dev_pitch / sizeof(uint32_t) * inputs_host[i];
+			}
+
+			for (uint32_t i = 0; i < num_outputs; i++) {
+				dev_out[i] = (size_t)circuit->net_values_dev_pitch / sizeof(uint32_t) * outputs_host[i];
+			}
+
+			cu(cudaMemcpy(input_offsets_dev, dev_in, (num_inputs + num_outputs) * sizeof(size_t), cudaMemcpyHostToDevice));
+		}
 	}
 
 	__device__ void CircuitComponent::_calculate_simulation_progress_dev(CircuitComponent* comp) {
@@ -169,7 +165,7 @@ namespace scsim {
 		*(comp->progress_dev_ptr + 1) = next_step_progress;
 	}
 
-	void CircuitComponent::init_with_circuit(StochasticCircuit* circuit, uint32_t* progress_host_ptr, uint32_t* progress_dev_ptr) {
+	void CircuitComponent::init_with_circuit(StochasticCircuit* circuit, uint32_t* progress_host_ptr, uint32_t* progress_dev_ptr, size_t* calc_scratchpad) {
 		this->circuit = circuit;
 		this->progress_host_ptr = progress_host_ptr;
 		if (!circuit->host_only) {
@@ -177,15 +173,15 @@ namespace scsim {
 			net_progress_dev = circuit->net_progress_dev;
 			sim_length = circuit->sim_length;
 			this->progress_dev_ptr = progress_dev_ptr;
-			cu(cudaMalloc(&input_offsets_dev, num_inputs * sizeof(size_t)));
-			cu(cudaMalloc(&output_offsets_dev, num_outputs * sizeof(size_t)));
-			cu(cudaMalloc(&inputs_dev, num_inputs * sizeof(uint32_t)));
-			cu(cudaMalloc(&outputs_dev, num_outputs * sizeof(uint32_t)));
-			cu(cudaMemcpy(inputs_dev, inputs_host, num_inputs * sizeof(uint32_t), cudaMemcpyHostToDevice));
-			cu(cudaMemcpy(outputs_dev, outputs_host, num_outputs * sizeof(uint32_t), cudaMemcpyHostToDevice));
+			size_t io_dwords = (num_inputs + num_outputs + 1) / 2;
+			cu(cudaMalloc(&inputs_dev, (io_dwords + num_inputs + num_outputs) * sizeof(size_t)));
+			outputs_dev = inputs_dev + num_inputs;
+			input_offsets_dev = ((size_t*)inputs_dev) + io_dwords;
+			output_offsets_dev = input_offsets_dev + num_inputs;
+			cu(cudaMemcpy(inputs_dev, inputs_host, (num_inputs + num_outputs) * sizeof(uint32_t), cudaMemcpyHostToDevice));
 		}
 
-		calculate_io_offsets();
+		calculate_io_offsets(calc_scratchpad);
 	}
 
 	__global__ void link_default_simprog_kern(CircuitComponent* comp) {

@@ -74,9 +74,9 @@ namespace scsim {
 		uint32_t* inputs_dev;
 		uint32_t* outputs_dev;
 
-		void calculate_io_offsets();
+		void calculate_io_offsets(size_t* calc_scratchpad);
 
-		virtual void init_with_circuit(StochasticCircuit* circuit, uint32_t* progress_host_ptr, uint32_t* progress_dev_ptr);
+		virtual void init_with_circuit(StochasticCircuit* circuit, uint32_t* progress_host_ptr, uint32_t* progress_dev_ptr, size_t* calc_scratchpad);
 
 		virtual void link_dev_functions();		
 
