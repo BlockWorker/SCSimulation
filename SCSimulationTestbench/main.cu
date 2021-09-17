@@ -171,7 +171,7 @@ int main() {
 
 		run(sim_max_mem);
 	} catch (std::exception e) {
-		std::cerr << e.what();
+		std::cerr << e.what() << std::endl;
 	}
 
 	std::cout << "Press return to exit...";
