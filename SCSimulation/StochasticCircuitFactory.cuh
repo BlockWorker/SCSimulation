@@ -39,11 +39,13 @@ namespace scsim {
 
 		template<size_t state_size>
 		void add_component(SequentialComponent<state_size>* component) {
-			auto index = add_component_internal(component);
+			add_component_internal(component);
 			num_seq_comp++;
 		}
 
 	private:
+		friend CircuitComponent;
+
 		bool host_only;
 		uint32_t sim_length;
 		uint32_t num_nets;
@@ -53,7 +55,7 @@ namespace scsim {
 		std::vector<bool> driven_nets;
 		size_t max_component_size;
 		size_t max_component_align;
-		uint32_t max_component_io;
+		std::vector<uint32_t> component_io;
 
 		uint32_t* net_values_host;
 		uint32_t* net_values_dev;
@@ -65,8 +67,14 @@ namespace scsim {
 		uint32_t* component_progress_dev;
 		char* component_array_host;
 		char* component_array_dev;
+		uint32_t* component_io_host;
+		uint32_t* component_io_dev;
+		size_t* component_io_offsets_host;
+		size_t* component_io_offsets_dev;
+		size_t* dev_offset_scratchpad;
+		CircuitComponent** dev_pointers_scratchpad;
 
-		uint32_t add_component_internal(CircuitComponent* component);
+		void add_component_internal(CircuitComponent* component);
 
 	};
 

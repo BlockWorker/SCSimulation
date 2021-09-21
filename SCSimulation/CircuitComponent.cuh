@@ -3,6 +3,14 @@
 #include <stdint.h>
 #include "dll.h"
 
+/// <summary>
+/// Use this macro to add components to a circuit factory.
+/// </summary>
+/// <param name="factory">Pointer to the factory to add the component to</param>
+/// <param name="Type">Component type</param>
+/// <param name="__VA_ARGS__">Component constructor arguments (excluding factory)</param>
+#define factory_add_component(factory, Type, ...) factory->add_component(new Type(__VA_ARGS__, (StochasticCircuitFactory*)factory))
+
 namespace scsim {
 
 	class StochasticCircuit;
@@ -23,7 +31,7 @@ namespace scsim {
 		/// <param name="type">Unique component type index/hash, use typehash(Type) macro in circuit_component_defines.h</param>
 		/// <param name="size">Memory size of component, use sizeof(Type)</param>
 		/// <param name="align">Memory alignment of component, use alignof(Type)</param>
-		CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size, size_t align);
+		CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size, size_t align, StochasticCircuitFactory* factory);
 
 		virtual ~CircuitComponent();
 
@@ -74,9 +82,11 @@ namespace scsim {
 		uint32_t* inputs_dev;
 		uint32_t* outputs_dev;
 
-		void calculate_io_offsets(size_t* calc_scratchpad);
+		size_t io_array_offset;
 
-		virtual void init_with_circuit(StochasticCircuit* circuit, uint32_t* progress_host_ptr, uint32_t* progress_dev_ptr, size_t* calc_scratchpad);
+		void calculate_io_offsets(size_t* dev_offset_scratchpad);
+
+		virtual void init_with_circuit(StochasticCircuit* circuit, uint32_t* progress_host_ptr, uint32_t* progress_dev_ptr, size_t* dev_offset_scratchpad);
 
 		virtual void link_dev_functions();		
 

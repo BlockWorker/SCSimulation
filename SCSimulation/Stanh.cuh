@@ -11,7 +11,7 @@ namespace scsim {
 	{
 	public:
 		/// <param name="k">Number of states: output ~= tanh((k/2) * input)</param>
-		Stanh(uint32_t input, uint32_t output, uint32_t k);
+		Stanh(uint32_t input, uint32_t output, uint32_t k, StochasticCircuitFactory* factory);
 
 		virtual void reset_state() override;
 

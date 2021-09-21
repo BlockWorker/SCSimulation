@@ -134,11 +134,11 @@ private:
 			auto first_neuron_weight = first_layer_weight + i * layersize;
 
 			for (uint32_t j = 0; j < layersize; j++) {
-				factory->add_component(new XnorGate(first_layer_in + j, first_neuron_weight + j, first_mux_in + j));
+				factory_add_component(factory, XnorGate, first_layer_in + j, first_neuron_weight + j, first_mux_in + j);
 			}
 
-			factory->add_component(new MultiplexerN(layersize, first_mux_in, first_layer_sel, mux_stanh_int));
-			factory->add_component(new Stanh(mux_stanh_int, first_layer_out + i, states));
+			factory_add_component(factory, MultiplexerN, layersize, first_mux_in, first_layer_sel, mux_stanh_int);
+			factory_add_component(factory, Stanh, mux_stanh_int, first_layer_out + i, states);
 		}
 	}
 

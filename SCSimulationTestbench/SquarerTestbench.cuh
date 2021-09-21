@@ -57,8 +57,8 @@ protected:
 		first_out = factory->add_nets(count + 1).first;
 
 		for (uint32_t i = 0; i <= count; i++) {
-			factory->add_component(new BitwiseDelay(first_in + i, first_int + i));
-			factory->add_component(new BitwiseAndGate(first_in + i, first_int + i, first_out + i));
+			factory_add_component(factory, BitwiseDelay, first_in + i, first_int + i);
+			factory_add_component(factory, BitwiseAndGate, first_in + i, first_int + i, first_out + i);
 		}
 
 		return num_runs;

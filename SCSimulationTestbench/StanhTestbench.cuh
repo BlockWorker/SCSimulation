@@ -56,7 +56,7 @@ protected:
 		first_out = factory->add_nets(count + 1).first;
 
 		for (uint32_t i = 0; i <= count; i++) {
-			factory->add_component(new Stanh(first_in + i, first_out + i, states));
+			factory_add_component(factory, Stanh, first_in + i, first_out + i, states);
 		}
 
 		return num_runs;

@@ -9,7 +9,7 @@
 
 namespace scsim {
 
-	Inverter::Inverter(uint32_t input, uint32_t output) : CombinatorialComponent(1, 1, typehash(Inverter), sizeof(Inverter), alignof(Inverter)) {
+	Inverter::Inverter(uint32_t input, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(1, 1, typehash(Inverter), sizeof(Inverter), alignof(Inverter), factory) {
 		inputs_host[0] = input;
 		outputs_host[0] = output;
 	}
@@ -38,7 +38,7 @@ namespace scsim {
 	}
 
 
-	AndGate::AndGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(AndGate), sizeof(AndGate), alignof(AndGate)) {
+	AndGate::AndGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, typehash(AndGate), sizeof(AndGate), alignof(AndGate), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
@@ -70,7 +70,7 @@ namespace scsim {
 	}
 
 
-	NandGate::NandGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(NandGate), sizeof(NandGate), alignof(NandGate)) {
+	NandGate::NandGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, typehash(NandGate), sizeof(NandGate), alignof(NandGate), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
@@ -102,7 +102,7 @@ namespace scsim {
 	}
 
 
-	OrGate::OrGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(OrGate), sizeof(OrGate), alignof(OrGate)) {
+	OrGate::OrGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, typehash(OrGate), sizeof(OrGate), alignof(OrGate), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
@@ -134,7 +134,7 @@ namespace scsim {
 	}
 
 
-	NorGate::NorGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(NorGate), sizeof(NorGate), alignof(NorGate)) {
+	NorGate::NorGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, typehash(NorGate), sizeof(NorGate), alignof(NorGate), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
@@ -166,7 +166,7 @@ namespace scsim {
 	}
 
 
-	XorGate::XorGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(XorGate), sizeof(XorGate), alignof(XorGate)) {
+	XorGate::XorGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, typehash(XorGate), sizeof(XorGate), alignof(XorGate), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
@@ -198,7 +198,7 @@ namespace scsim {
 	}
 
 
-	XnorGate::XnorGate(uint32_t input1, uint32_t input2, uint32_t output) : CombinatorialComponent(2, 1, typehash(XnorGate), sizeof(XnorGate), alignof(XnorGate)) {
+	XnorGate::XnorGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, typehash(XnorGate), sizeof(XnorGate), alignof(XnorGate), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
@@ -230,7 +230,7 @@ namespace scsim {
 	}
 
 
-	Multiplexer2::Multiplexer2(uint32_t input1, uint32_t input2, uint32_t select, uint32_t output) : CombinatorialComponent(3, 1, typehash(Multiplexer2), sizeof(Multiplexer2), alignof(Multiplexer2)) {
+	Multiplexer2::Multiplexer2(uint32_t input1, uint32_t input2, uint32_t select, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(3, 1, typehash(Multiplexer2), sizeof(Multiplexer2), alignof(Multiplexer2), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		inputs_host[2] = select;
@@ -267,8 +267,8 @@ namespace scsim {
 	}
 
 
-	MultiplexerN::MultiplexerN(uint32_t _num_inputs, uint32_t* inputs, uint32_t* selects, uint32_t output) : num_mux_inputs(_num_inputs), num_selects((uint32_t)ceil(log2((double)_num_inputs))),
-		CombinatorialComponent(_num_inputs + (uint32_t)ceil(log2((double)_num_inputs)), 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN)) {
+	MultiplexerN::MultiplexerN(uint32_t _num_inputs, uint32_t* inputs, uint32_t* selects, uint32_t output, StochasticCircuitFactory* factory) : num_mux_inputs(_num_inputs), num_selects((uint32_t)ceil(log2((double)_num_inputs))),
+		CombinatorialComponent(_num_inputs + (uint32_t)ceil(log2((double)_num_inputs)), 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN), factory) {
 
 		memcpy(this->inputs_host, inputs, _num_inputs * sizeof(uint32_t));
 		memcpy((this->inputs_host + _num_inputs), selects, num_selects * sizeof(uint32_t));
@@ -276,8 +276,8 @@ namespace scsim {
 		outputs_host[0] = output;
 	}
 
-	MultiplexerN::MultiplexerN(uint32_t _num_inputs, uint32_t first_input, uint32_t first_select, uint32_t output) : num_mux_inputs(_num_inputs), num_selects((uint32_t)ceil(log2((double)_num_inputs))),
-		CombinatorialComponent(_num_inputs + (uint32_t)ceil(log2((double)_num_inputs)), 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN)) {
+	MultiplexerN::MultiplexerN(uint32_t _num_inputs, uint32_t first_input, uint32_t first_select, uint32_t output, StochasticCircuitFactory* factory) : num_mux_inputs(_num_inputs), num_selects((uint32_t)ceil(log2((double)_num_inputs))),
+		CombinatorialComponent(_num_inputs + (uint32_t)ceil(log2((double)_num_inputs)), 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN), factory) {
 
 		for (uint32_t i = 0; i < _num_inputs; i++) {
 			this->inputs_host[i] = first_input + i;
@@ -290,8 +290,8 @@ namespace scsim {
 		outputs_host[0] = output;
 	}
 
-	MultiplexerN::MultiplexerN(std::initializer_list<uint32_t> inputs, std::initializer_list<uint32_t> selects, uint32_t output) : num_mux_inputs(inputs.size()), num_selects((uint32_t)ceil(log2((double)inputs.size()))),
-		CombinatorialComponent(inputs.size() + (uint32_t)ceil(log2((double)inputs.size())), 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN)) {
+	MultiplexerN::MultiplexerN(std::initializer_list<uint32_t> inputs, std::initializer_list<uint32_t> selects, uint32_t output, StochasticCircuitFactory* factory) : num_mux_inputs(inputs.size()), num_selects((uint32_t)ceil(log2((double)inputs.size()))),
+		CombinatorialComponent(inputs.size() + (uint32_t)ceil(log2((double)inputs.size())), 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN), factory) {
 
 		if (selects.size() < num_selects) throw;
 
@@ -350,7 +350,7 @@ namespace scsim {
 	}
 
 
-	Delay::Delay(uint32_t input, uint32_t output) : CombinatorialComponent(1, 1, typehash(Delay), sizeof(Delay), alignof(Delay)) {
+	Delay::Delay(uint32_t input, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(1, 1, typehash(Delay), sizeof(Delay), alignof(Delay), factory) {
 		inputs_host[0] = input;
 		outputs_host[0] = output;
 	}

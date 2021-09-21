@@ -9,7 +9,7 @@
 
 namespace scsim {
 
-	Stanh::Stanh(uint32_t input, uint32_t output, uint32_t k) : SequentialComponent(1, 1, typehash(Stanh), sizeof(Stanh), alignof(Stanh)), k(k) {
+	Stanh::Stanh(uint32_t input, uint32_t output, uint32_t k, StochasticCircuitFactory* factory) : SequentialComponent(1, 1, typehash(Stanh), sizeof(Stanh), alignof(Stanh), factory), k(k) {
 		inputs_host[0] = input;
 		outputs_host[0] = output;
 	}

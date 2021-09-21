@@ -10,23 +10,26 @@
 namespace scsim {
 
 	StochasticCircuit::StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values, uint32_t* net_progress, uint32_t num_components_comb, uint32_t num_components_seq,
-		CircuitComponent** components, uint32_t* component_progress, uint32_t num_component_types) :
+		CircuitComponent** components, uint32_t* component_progress, uint32_t num_component_types, uint32_t* component_io, size_t* component_io_offsets) :
 		host_only(true), sim_length(sim_length), sim_length_words((sim_length + 31) / 32), num_nets(num_nets), net_values_host(net_values), net_values_host_pitch((sim_length + 31) / 32 * sizeof(uint32_t)),
 		net_values_dev(nullptr), net_values_dev_pitch(0), net_progress_host(net_progress), net_progress_dev(nullptr), num_components_comb(num_components_comb), num_components_seq(num_components_seq),
 		num_components(num_components_comb + num_components_seq), components_host(components), components_dev(nullptr), component_array_host(nullptr), component_array_host_pitch(0),
-		component_array_dev(nullptr), component_array_dev_pitch(0), component_progress_host(component_progress), component_progress_dev(nullptr), num_component_types(num_component_types) {
+		component_array_dev(nullptr), component_array_dev_pitch(0), component_progress_host(component_progress), component_progress_dev(nullptr), num_component_types(num_component_types),
+		component_io_host(component_io), component_io_dev(nullptr), component_io_offsets_host(component_io_offsets), component_io_offsets_dev(nullptr) {
 
 	}
 
 	StochasticCircuit::StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values_host, uint32_t* net_values_dev, size_t net_values_dev_pitch, uint32_t* net_progress_host, uint32_t* net_progress_dev,
 		uint32_t num_components_comb, uint32_t num_components_seq, CircuitComponent** components_host, CircuitComponent** components_dev, char* component_array_host, size_t component_array_host_pitch,
-		char* component_array_dev, size_t component_array_dev_pitch, uint32_t* component_progress_host, uint32_t* component_progress_dev, uint32_t num_component_types) :
+		char* component_array_dev, size_t component_array_dev_pitch, uint32_t* component_progress_host, uint32_t* component_progress_dev, uint32_t num_component_types, uint32_t* component_io_host,
+		uint32_t* component_io_dev, size_t* component_io_offsets_host, size_t* component_io_offsets_dev) :
 		host_only(false), sim_length(sim_length), sim_length_words((sim_length + 31) / 32), num_nets(num_nets), net_values_host(net_values_host),
 		net_values_host_pitch((sim_length + 31) / 32 * sizeof(uint32_t)), net_values_dev(net_values_dev), net_values_dev_pitch(net_values_dev_pitch), net_progress_host(net_progress_host),
 		net_progress_dev(net_progress_dev), num_components_comb(num_components_comb), num_components_seq(num_components_seq), num_components(num_components_comb + num_components_seq),
 		components_host(components_host), components_dev(components_dev), component_array_host(component_array_host), component_array_host_pitch(component_array_host_pitch),
 		component_array_dev(component_array_dev), component_array_dev_pitch(component_array_dev_pitch), component_progress_host(component_progress_host),
-		component_progress_dev(component_progress_dev), num_component_types(num_component_types) {
+		component_progress_dev(component_progress_dev), num_component_types(num_component_types), component_io_host(component_io_host), component_io_dev(component_io_dev),
+		component_io_offsets_host(component_io_offsets_host), component_io_offsets_dev(component_io_offsets_dev) {
 
 	}
 
@@ -48,6 +51,8 @@ namespace scsim {
 			cu_ignore_error(cudaFree(components_dev));
 			cu_ignore_error(cudaFree(component_array_dev));
 			cu_ignore_error(cudaFree(component_progress_dev));
+			cu_ignore_error(cudaFree(component_io_dev));
+			cu_ignore_error(cudaFree(component_io_offsets_dev));
 
 			cu_ignore_error(cudaHostUnregister(component_array_host));
 			cu_ignore_error(cudaHostUnregister(net_values_host));
@@ -61,6 +66,8 @@ namespace scsim {
 		free(net_progress_host);
 		free(components_host);
 		free(component_progress_host);
+		free(component_io_host);
+		free(component_io_offsets_host);
 	}
 
 	void StochasticCircuit::reset_circuit() {

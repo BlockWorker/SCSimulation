@@ -10,7 +10,7 @@ bool sim_bitwise = false;
 class BitwiseInverter : public Inverter
 {
 public:
-	BitwiseInverter(uint32_t input, uint32_t output) : Inverter(input, output) {
+	BitwiseInverter(uint32_t input, uint32_t output, StochasticCircuitFactory* factory) : Inverter(input, output, factory) {
 
 	}
 
@@ -57,7 +57,7 @@ public:
 class BitwiseAndGate : public AndGate
 {
 public:
-	BitwiseAndGate(uint32_t input1, uint32_t input2, uint32_t output) : AndGate(input1, input2, output) {
+	BitwiseAndGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : AndGate(input1, input2, output, factory) {
 
 	}
 
@@ -108,7 +108,7 @@ public:
 class BitwiseDelay : public Delay
 {
 public:
-	BitwiseDelay(uint32_t input, uint32_t output) : Delay(input, output) {
+	BitwiseDelay(uint32_t input, uint32_t output, StochasticCircuitFactory* factory) : Delay(input, output, factory) {
 
 	}
 

@@ -57,8 +57,8 @@ protected:
 		first_out = factory->add_nets(count + 1).first;
 
 		for (uint32_t i = 0; i <= count; i++) {
-			factory->add_component(new XorGate(first_in + i, first_int + i, first_out + i));
-			factory->add_component(new Delay(first_out + i, first_int + i));
+			factory_add_component(factory, XorGate, first_in + i, first_int + i, first_out + i);
+			factory_add_component(factory, Delay, first_out + i, first_int + i);
 		}
 
 		return num_runs;

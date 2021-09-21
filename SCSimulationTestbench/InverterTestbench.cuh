@@ -54,7 +54,7 @@ protected:
 		first_out = factory->add_nets(count + 1).first;
 
 		for (uint32_t i = 0; i <= count; i++) {
-			factory->add_component(new BitwiseInverter(first_in + i, first_out + i));
+			factory_add_component(factory, BitwiseInverter, first_in + i, first_out + i);
 		}
 
 		return num_runs;

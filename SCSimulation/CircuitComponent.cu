@@ -2,11 +2,12 @@
 
 #include "CircuitComponent.cuh"
 #include "StochasticCircuit.cuh"
+#include "StochasticCircuitFactory.cuh"
 
 namespace scsim {
 
-	CircuitComponent::CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size, size_t align) : component_type(type), mem_obj_size(size), mem_align(align),
-		num_inputs(num_inputs), num_outputs(num_outputs) {
+	CircuitComponent::CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size, size_t align, StochasticCircuitFactory* factory) : component_type(type),
+		mem_obj_size(size), mem_align(align), num_inputs(num_inputs), num_outputs(num_outputs) {
 		circuit = nullptr;
 		net_values_dev = nullptr;
 		net_progress_dev = nullptr;
@@ -16,11 +17,12 @@ namespace scsim {
 		calc_progress_dev_ptr = nullptr;
 		progress_host_ptr = nullptr;
 		progress_dev_ptr = nullptr;
-		size_t io_dwords = (num_inputs + num_outputs + 1) / 2;
-		inputs_host = (uint32_t*)malloc((io_dwords + num_inputs + num_outputs) * sizeof(size_t));
+		io_array_offset = factory->component_io.size();
+		factory->component_io.resize(io_array_offset + num_inputs + num_outputs); //make space in factory for IO
+		inputs_host = factory->component_io.data() + io_array_offset; //link IO to factory-stored location for now
 		outputs_host = inputs_host + num_inputs;
-		input_offsets_host = ((size_t*)inputs_host) + io_dwords;
-		output_offsets_host = input_offsets_host + num_inputs;
+		input_offsets_host = nullptr;
+		output_offsets_host = nullptr;
 		inputs_dev = nullptr;
 		outputs_dev = nullptr;
 		input_offsets_dev = nullptr;
@@ -28,10 +30,7 @@ namespace scsim {
 	}
 
 	CircuitComponent::~CircuitComponent() {
-		free(inputs_host);
-		if (circuit != nullptr && !circuit->host_only) {
-			cu_ignore_error(cudaFree(inputs_dev));
-		}
+
 	}
 
 	__host__ __device__ uint32_t CircuitComponent::current_sim_progress() const {
@@ -115,7 +114,7 @@ namespace scsim {
 		}
 	}
 
-	void CircuitComponent::calculate_io_offsets(size_t* calc_scratchpad) {
+	void CircuitComponent::calculate_io_offsets(size_t* dev_offset_scratchpad) {
 		for (uint32_t i = 0; i < num_inputs; i++) {
 			input_offsets_host[i] = (size_t)circuit->sim_length_words * inputs_host[i];
 		}
@@ -125,8 +124,8 @@ namespace scsim {
 		}
 
 		if (!circuit->host_only) {
-			size_t* dev_in = calc_scratchpad;
-			size_t* dev_out = calc_scratchpad + num_inputs;
+			size_t* dev_in = dev_offset_scratchpad + io_array_offset;
+			size_t* dev_out = dev_in + num_inputs;
 
 			for (uint32_t i = 0; i < num_inputs; i++) {
 				dev_in[i] = (size_t)circuit->net_values_dev_pitch / sizeof(uint32_t) * inputs_host[i];
@@ -135,8 +134,6 @@ namespace scsim {
 			for (uint32_t i = 0; i < num_outputs; i++) {
 				dev_out[i] = (size_t)circuit->net_values_dev_pitch / sizeof(uint32_t) * outputs_host[i];
 			}
-
-			cu(cudaMemcpy(input_offsets_dev, dev_in, (num_inputs + num_outputs) * sizeof(size_t), cudaMemcpyHostToDevice));
 		}
 	}
 
@@ -165,23 +162,25 @@ namespace scsim {
 		*(comp->progress_dev_ptr + 1) = next_step_progress;
 	}
 
-	void CircuitComponent::init_with_circuit(StochasticCircuit* circuit, uint32_t* progress_host_ptr, uint32_t* progress_dev_ptr, size_t* calc_scratchpad) {
+	void CircuitComponent::init_with_circuit(StochasticCircuit* circuit, uint32_t* progress_host_ptr, uint32_t* progress_dev_ptr, size_t* dev_offset_scratchpad) {
 		this->circuit = circuit;
 		this->progress_host_ptr = progress_host_ptr;
+		inputs_host = circuit->component_io_host + io_array_offset; //re-link to circuit-stored inputs and outputs, as well as offsets
+		outputs_host = inputs_host + num_inputs;
+		input_offsets_host = circuit->component_io_offsets_host + io_array_offset;
+		output_offsets_host = input_offsets_host + num_inputs;
 		if (!circuit->host_only) {
 			net_values_dev = circuit->net_values_dev;
 			net_progress_dev = circuit->net_progress_dev;
 			sim_length = circuit->sim_length;
 			this->progress_dev_ptr = progress_dev_ptr;
-			size_t io_dwords = (num_inputs + num_outputs + 1) / 2;
-			cu(cudaMalloc(&inputs_dev, (io_dwords + num_inputs + num_outputs) * sizeof(size_t)));
+			inputs_dev = circuit->component_io_dev + io_array_offset;
 			outputs_dev = inputs_dev + num_inputs;
-			input_offsets_dev = ((size_t*)inputs_dev) + io_dwords;
+			input_offsets_dev = circuit->component_io_offsets_dev + io_array_offset;
 			output_offsets_dev = input_offsets_dev + num_inputs;
-			cu(cudaMemcpy(inputs_dev, inputs_host, (num_inputs + num_outputs) * sizeof(uint32_t), cudaMemcpyHostToDevice));
 		}
 
-		calculate_io_offsets(calc_scratchpad);
+		calculate_io_offsets(dev_offset_scratchpad);
 	}
 
 	__global__ void link_default_simprog_kern(CircuitComponent* comp) {

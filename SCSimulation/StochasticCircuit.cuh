@@ -75,6 +75,7 @@ namespace scsim {
 
 	private:
 		friend StochasticCircuitFactory;
+		friend CircuitComponent;
 
 		bool simulation_finished = false;
 
@@ -85,15 +86,20 @@ namespace scsim {
 		uint32_t* const component_progress_host;
 		uint32_t* const component_progress_dev;
 		const uint32_t num_component_types;
+		uint32_t* const component_io_host;
+		uint32_t* const component_io_dev;
+		size_t* const component_io_offsets_host;
+		size_t* const component_io_offsets_dev;
 
 		//host-only circuit constructor
 		StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values, uint32_t* net_progress, uint32_t num_components_comb, uint32_t num_components_seq, CircuitComponent** components,
-			uint32_t* component_progress, uint32_t num_component_types);
+			uint32_t* component_progress, uint32_t num_component_types, uint32_t* component_io, size_t* component_io_offsets);
 
 		//device-accelerated circuit constructor
 		StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values_host, uint32_t* net_values_dev, size_t net_values_dev_pitch, uint32_t* net_progress_host, uint32_t* net_progress_dev,
 			uint32_t num_components_comb, uint32_t num_components_seq, CircuitComponent** components_host, CircuitComponent** components_dev, char* component_array_host, size_t component_array_host_pitch,
-			char* component_array_dev, size_t component_array_dev_pitch, uint32_t* component_progress_host, uint32_t* component_progress_dev, uint32_t num_component_types);
+			char* component_array_dev, size_t component_array_dev_pitch, uint32_t* component_progress_host, uint32_t* component_progress_dev, uint32_t num_component_types, uint32_t* component_io_host,
+			uint32_t* component_io_dev, size_t* component_io_offsets_host, size_t* component_io_offsets_dev);
 
 		void copy_component_progress_from_device();
 

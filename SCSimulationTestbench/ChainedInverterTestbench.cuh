@@ -50,11 +50,11 @@ protected:
 
 		if (setup_kind == 0) {
 			for (uint32_t i = 0; i < count; i++) {
-				factory->add_component(new Inverter(in + i, in + i + 1));
+				factory_add_component(factory, Inverter, in + i, in + i + 1);
 			}
 		} else {
 			for (uint32_t i = 0; i < count; i++) {
-				factory->add_component(new Inverter(out - i - 1, out - i));
+				factory_add_component(factory, Inverter, out - i - 1, out - i);
 			}
 		}
 

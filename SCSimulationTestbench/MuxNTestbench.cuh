@@ -58,7 +58,7 @@ protected:
 
 		for (uint32_t i = 0; i <= count; i++) {
 			auto in = 8 * i;
-			factory->add_component(new MultiplexerN(8, in, first_sel, first_out + i));
+			factory_add_component(factory, MultiplexerN, 8, in, first_sel, first_out + i);
 		}
 
 		return num_runs;
