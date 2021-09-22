@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include "SequentialComponent.cuh"
-#include "dll.h"
+#include "circuit_component_defines.cuh"
 
 namespace scsim {
 
@@ -19,8 +19,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-	protected:
-		virtual void link_dev_functions() override;
+		decl_device_statics(Stanh)
 
 	private:
 		const uint32_t k;

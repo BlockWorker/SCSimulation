@@ -2,15 +2,9 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <CudaCompile Include="CircuitComponent.cu" />
-    <CudaCompile Include="CircuitComponent.cuh" />
-    <CudaCompile Include="CombinatorialComponent.cuh" />
     <CudaCompile Include="StochasticCircuit.cu" />
-    <CudaCompile Include="StochasticCircuit.cuh" />
     <CudaCompile Include="StochasticCircuitFactory.cu" />
     <CudaCompile Include="StochasticNumber.cu" />
-    <CudaCompile Include="BasicCombinatorial.cuh">
-      <Filter>Components</Filter>
-    </CudaCompile>
     <CudaCompile Include="CombinatorialComponent.cu" />
     <CudaCompile Include="BasicCombinatorial.cu">
       <Filter>Components</Filter>
@@ -30,8 +24,14 @@
     </ClInclude>
     <ClInclude Include="cuda_base.cuh" />
     <ClInclude Include="curand_base.cuh" />
-    <ClInclude Include="dll.h" />
     <ClInclude Include="circuit_component_defines.cuh" />
+    <ClInclude Include="CircuitComponent.cuh" />
+    <ClInclude Include="CombinatorialComponent.cuh" />
+    <ClInclude Include="StochasticCircuit.cuh" />
+    <ClInclude Include="dll.h" />
+    <ClInclude Include="BasicCombinatorial.cuh">
+      <Filter>Components</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Components">

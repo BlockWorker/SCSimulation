@@ -16,15 +16,14 @@ namespace scsim {
 	class SCSIMAPI StochasticCircuitFactory
 	{
 	public:
-		StochasticCircuitFactory();
+		const bool host_only;
+
+		StochasticCircuitFactory(bool host_only);
 		~StochasticCircuitFactory();
 
 		void reset();
 
 		StochasticCircuit* create_circuit();
-
-		/// <param name="host_only">Whether the created circuit should only be simulated on the host</param>
-		void set_host_only(bool host_only);
 
 		/// <param name="sim_length">Desired length of the simulation in bits</param>
 		void set_sim_length(uint32_t sim_length);
@@ -45,8 +44,7 @@ namespace scsim {
 
 	private:
 		friend CircuitComponent;
-
-		bool host_only;
+		
 		uint32_t sim_length;
 		uint32_t num_nets;
 		uint32_t num_comb_comp;

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "cuda_base.cuh"
 #include <stdint.h>
 #include "dll.h"
 
@@ -40,10 +41,38 @@ namespace scsim {
 		CircuitComponent(CircuitComponent&& other) = delete;
 		CircuitComponent& operator=(CircuitComponent&& other) = delete;
 
-		__host__ __device__ uint32_t current_sim_progress() const;
-		__host__ __device__ uint32_t current_sim_progress_word() const;
-		__host__ __device__ uint32_t next_sim_progress() const;
-		__host__ __device__ uint32_t next_sim_progress_word() const;
+		__host__ __device__ uint32_t current_sim_progress() const {
+#ifdef __CUDA_ARCH__
+			return *progress_dev_ptr;
+#else
+			return *progress_host_ptr;
+#endif
+		}
+
+		__host__ __device__ uint32_t current_sim_progress_word() const {
+#ifdef __CUDA_ARCH__
+			return *progress_dev_ptr / 32;
+#else
+			return *progress_host_ptr / 32;
+#endif
+		}
+
+		__host__ __device__ uint32_t next_sim_progress() const {
+#ifdef __CUDA_ARCH__
+			return *(progress_dev_ptr + 1);
+#else
+			return *(progress_host_ptr + 1);
+#endif
+		}
+
+		__host__ __device__ uint32_t next_sim_progress_word() const {
+#ifdef __CUDA_ARCH__
+			return (*(progress_dev_ptr + 1) + 31) / 32;
+#else
+			return (*(progress_host_ptr + 1) + 31) / 32;
+#endif
+		}
+
 		StochasticCircuit* get_circuit() const;
 
 		virtual void reset_state() = 0;
@@ -88,7 +117,9 @@ namespace scsim {
 
 		virtual void init_with_circuit(StochasticCircuit* circuit, uint32_t* progress_host_ptr, uint32_t* progress_dev_ptr, size_t* dev_offset_scratchpad);
 
-		virtual void link_dev_functions();		
+	private:
+		static bool _dev_link_initialized;
+		static void (*_simprog_ptr)(CircuitComponent*);
 
 	};
 

@@ -106,6 +106,7 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <Include>$(SolutionDir)SCSimulation\;%(Include)</Include>
       <AdditionalOptions>-std=c++17 %(AdditionalOptions)</AdditionalOptions>
+      <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

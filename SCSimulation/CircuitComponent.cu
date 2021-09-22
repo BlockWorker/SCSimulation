@@ -6,6 +6,11 @@
 
 namespace scsim {
 
+	template <class T1>
+	__global__ void link_defprog_kern(void (**func_pointer)(scsim::CircuitComponent*)) {
+		*func_pointer = &scsim::CircuitComponent::_calculate_simulation_progress_dev;
+	}
+
 	CircuitComponent::CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size, size_t align, StochasticCircuitFactory* factory) : component_type(type),
 		mem_obj_size(size), mem_align(align), num_inputs(num_inputs), num_outputs(num_outputs) {
 		circuit = nullptr;
@@ -14,7 +19,6 @@ namespace scsim {
 		sim_length = 0;
 		dev_ptr = nullptr;
 		simulate_step_dev_ptr = nullptr;
-		calc_progress_dev_ptr = nullptr;
 		progress_host_ptr = nullptr;
 		progress_dev_ptr = nullptr;
 		io_array_offset = factory->component_io.size();
@@ -27,43 +31,25 @@ namespace scsim {
 		outputs_dev = nullptr;
 		input_offsets_dev = nullptr;
 		output_offsets_dev = nullptr;
+
+		if (!_dev_link_initialized && !factory->host_only) {
+			_dev_link_initialized = true;
+			void (*pointer)(CircuitComponent*);
+			void (**dev_pointer)(CircuitComponent*);
+			cu(cudaMalloc(&dev_pointer, sizeof(void (*)(CircuitComponent*))));
+			link_defprog_kern<CircuitComponent><<<1, 1>>>(dev_pointer);
+			cu(cudaMemcpy(&pointer, dev_pointer, sizeof(void (*)(CircuitComponent*)), cudaMemcpyDeviceToHost));
+			_simprog_ptr = *pointer;
+		}
+		calc_progress_dev_ptr = _simprog_ptr;
 	}
 
 	CircuitComponent::~CircuitComponent() {
 
 	}
 
-	__host__ __device__ uint32_t CircuitComponent::current_sim_progress() const {
-#ifdef __CUDA_ARCH__
-		return *progress_dev_ptr;
-#else
-		return *progress_host_ptr;
-#endif
-	}
-
-	__host__ __device__ uint32_t CircuitComponent::current_sim_progress_word() const {
-#ifdef __CUDA_ARCH__
-		return *progress_dev_ptr / 32;
-#else
-		return *progress_host_ptr / 32;
-#endif
-	}
-
-	__host__ __device__ uint32_t CircuitComponent::next_sim_progress() const {
-#ifdef __CUDA_ARCH__
-		return *(progress_dev_ptr + 1);
-#else
-		return *(progress_host_ptr + 1);
-#endif
-	}
-
-	__host__ __device__ uint32_t CircuitComponent::next_sim_progress_word() const {
-#ifdef __CUDA_ARCH__
-		return (*(progress_dev_ptr + 1) + 31) / 32;
-#else
-		return (*(progress_host_ptr + 1) + 31) / 32;
-#endif
-	}
+	bool SCSIMAPI CircuitComponent::_dev_link_initialized = false;
+	void SCSIMAPI (*CircuitComponent::_simprog_ptr)(CircuitComponent*) = nullptr;
 
 	StochasticCircuit* CircuitComponent::get_circuit() const {
 		return circuit;
@@ -181,14 +167,6 @@ namespace scsim {
 		}
 
 		calculate_io_offsets(dev_offset_scratchpad);
-	}
-
-	__global__ void link_default_simprog_kern(CircuitComponent* comp) {
-		comp->calc_progress_dev_ptr = &comp->_calculate_simulation_progress_dev;
-	}
-
-	void CircuitComponent::link_dev_functions() {
-		link_default_simprog_kern<<<1, 1>>>(dev_ptr);
 	}
 
 }

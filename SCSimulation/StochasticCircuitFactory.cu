@@ -17,7 +17,7 @@
 
 namespace scsim {
 
-	StochasticCircuitFactory::StochasticCircuitFactory() {
+	StochasticCircuitFactory::StochasticCircuitFactory(bool host_only) : host_only(host_only) {
 		reset();
 	}
 
@@ -54,7 +54,6 @@ namespace scsim {
 	}
 
 	void StochasticCircuitFactory::reset() {
-		host_only = false;
 		sim_length = 0;
 		num_nets = 0;
 		num_comb_comp = 0;
@@ -216,14 +215,6 @@ namespace scsim {
 			for (auto comp : components) operator delete(comp); //free original allocation for component (without deconstructing the actual component)
 
 			circuit->reset_circuit();
-			circuit->copy_data_to_device();
-
-			//link device simulation functions for all components
-			for (uint32_t i = 0; i < components.size(); i++) {
-				components_host[i]->link_dev_functions();
-			}
-
-			circuit->copy_data_from_device();
 
 #ifdef SCFACTORY_PRINT_TIME
 			auto sec4_end = std::chrono::steady_clock::now();
@@ -234,10 +225,6 @@ namespace scsim {
 		reset();
 
 		return circuit;
-	}
-
-	void StochasticCircuitFactory::set_host_only(bool host_only) {
-		this->host_only = host_only;
 	}
 
 	void StochasticCircuitFactory::set_sim_length(uint32_t sim_length) {

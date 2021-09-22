@@ -1,20 +1,24 @@
 #include "cuda_base.cuh"
-#include "circuit_component_defines.cuh"
 
 #include <stdint.h>
 #include <typeinfo>
 
-#include "Stanh.cuh"
 #include "StochasticCircuit.cuh"
+#include "StochasticCircuitFactory.cuh"
+#include "Stanh.cuh"
+
+#undef COMP_IMPEXP_SPEC
+#define COMP_IMPEXP_SPEC SCSIMAPI
 
 namespace scsim {
 
 	Stanh::Stanh(uint32_t input, uint32_t output, uint32_t k, StochasticCircuitFactory* factory) : SequentialComponent(1, 1, typehash(Stanh), sizeof(Stanh), alignof(Stanh), factory), k(k) {
 		inputs_host[0] = input;
 		outputs_host[0] = output;
+		link_device_sim_function(Stanh);
 	}
 
-	link_device_sim_function(Stanh)
+	def_device_statics(Stanh)
 
 	void Stanh::reset_state() {
 		state[0] = k / 2;

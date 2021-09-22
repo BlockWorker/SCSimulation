@@ -1,20 +1,24 @@
 #include "cuda_base.cuh"
-#include "circuit_component_defines.cuh"
 
 #include <memory.h>
 #include <typeinfo>
 
-#include "BasicCombinatorial.cuh"
 #include "StochasticCircuit.cuh"
+#include "StochasticCircuitFactory.cuh"
+#include "BasicCombinatorial.cuh"
+
+#undef COMP_IMPEXP_SPEC
+#define COMP_IMPEXP_SPEC SCSIMAPI
 
 namespace scsim {
 
 	Inverter::Inverter(uint32_t input, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(1, 1, typehash(Inverter), sizeof(Inverter), alignof(Inverter), factory) {
 		inputs_host[0] = input;
 		outputs_host[0] = output;
+		link_device_sim_function(Inverter);
 	}
 
-	link_device_sim_function(Inverter)
+	def_device_statics(Inverter)
 
 	void Inverter::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
@@ -42,9 +46,10 @@ namespace scsim {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
+		link_device_sim_function(AndGate);
 	}
 
-	link_device_sim_function(AndGate)
+	def_device_statics(AndGate)
 
 	void AndGate::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
@@ -74,9 +79,10 @@ namespace scsim {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
+		link_device_sim_function(NandGate);
 	}
 
-	link_device_sim_function(NandGate)
+	def_device_statics(NandGate)
 
 	void NandGate::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
@@ -106,9 +112,10 @@ namespace scsim {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
+		link_device_sim_function(OrGate);
 	}
 
-	link_device_sim_function(OrGate)
+	def_device_statics(OrGate)
 
 	void OrGate::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
@@ -138,9 +145,10 @@ namespace scsim {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
+		link_device_sim_function(NorGate);
 	}
 
-	link_device_sim_function(NorGate)
+	def_device_statics(NorGate)
 
 	void NorGate::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
@@ -170,9 +178,10 @@ namespace scsim {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
+		link_device_sim_function(XorGate);
 	}
 
-	link_device_sim_function(XorGate)
+	def_device_statics(XorGate)
 
 	void XorGate::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
@@ -202,9 +211,10 @@ namespace scsim {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
+		link_device_sim_function(XnorGate);
 	}
 
-	link_device_sim_function(XnorGate)
+	def_device_statics(XnorGate)
 
 	void XnorGate::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
@@ -235,9 +245,10 @@ namespace scsim {
 		inputs_host[1] = input2;
 		inputs_host[2] = select;
 		outputs_host[0] = output;
+		link_device_sim_function(Multiplexer2);
 	}
 
-	link_device_sim_function(Multiplexer2)
+	def_device_statics(Multiplexer2)
 
 	void Multiplexer2::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
@@ -274,6 +285,8 @@ namespace scsim {
 		memcpy((this->inputs_host + _num_inputs), selects, num_selects * sizeof(uint32_t));
 
 		outputs_host[0] = output;
+
+		link_device_sim_function(MultiplexerN);
 	}
 
 	MultiplexerN::MultiplexerN(uint32_t _num_inputs, uint32_t first_input, uint32_t first_select, uint32_t output, StochasticCircuitFactory* factory) : num_mux_inputs(_num_inputs), num_selects((uint32_t)ceil(log2((double)_num_inputs))),
@@ -288,6 +301,8 @@ namespace scsim {
 		}
 
 		outputs_host[0] = output;
+
+		link_device_sim_function(MultiplexerN);
 	}
 
 	MultiplexerN::MultiplexerN(std::initializer_list<uint32_t> inputs, std::initializer_list<uint32_t> selects, uint32_t output, StochasticCircuitFactory* factory) : num_mux_inputs(inputs.size()), num_selects((uint32_t)ceil(log2((double)inputs.size()))),
@@ -306,9 +321,11 @@ namespace scsim {
 		}
 
 		outputs_host[0] = output;
+
+		link_device_sim_function(MultiplexerN);
 	}
 
-	link_device_sim_function(MultiplexerN)
+	def_device_statics(MultiplexerN)
 
 	void MultiplexerN::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
@@ -353,9 +370,10 @@ namespace scsim {
 	Delay::Delay(uint32_t input, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(1, 1, typehash(Delay), sizeof(Delay), alignof(Delay), factory) {
 		inputs_host[0] = input;
 		outputs_host[0] = output;
+		link_device_sim_progress_functions(Delay);
 	}
 
-	link_device_sim_progress_functions(Delay)
+	def_device_statics(Delay)
 
 	void Delay::calculate_simulation_progress_host() {
 		uint32_t current_progress = circuit->sim_length;

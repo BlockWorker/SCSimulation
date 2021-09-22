@@ -61,8 +61,8 @@
       <AdditionalCompilerOptions>
       </AdditionalCompilerOptions>
       <AdditionalOptions>-std=c++17 %(AdditionalOptions)</AdditionalOptions>
-      <Defines>SCSIMULATION_EXPORT</Defines>
       <PtxAsOptionV>true</PtxAsOptionV>
+      <Defines>SCSIMULATION_EXPORT</Defines>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -80,24 +80,22 @@
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>cudart_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;curand.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <AdditionalOptions>-std=c++17 %(AdditionalOptions)</AdditionalOptions>
-      <Defines>SCSIMULATION_EXPORT</Defines>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+      <Defines>SCSIMULATION_EXPORT</Defines>
+      <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="BasicCombinatorial.cu" />
-    <CudaCompile Include="BasicCombinatorial.cuh" />
     <CudaCompile Include="CircuitComponent.cu" />
-    <CudaCompile Include="CircuitComponent.cuh" />
     <CudaCompile Include="CombinatorialComponent.cu" />
-    <CudaCompile Include="CombinatorialComponent.cuh" />
     <CudaCompile Include="Stanh.cu" />
     <CudaCompile Include="StochasticCircuit.cu" />
-    <CudaCompile Include="StochasticCircuit.cuh" />
     <CudaCompile Include="StochasticCircuitFactory.cu" />
     <CudaCompile Include="StochasticNumber.cu" />
   </ItemGroup>
@@ -112,6 +110,10 @@
     <ClInclude Include="Stanh.cuh" />
     <ClInclude Include="StochasticCircuitFactory.cuh" />
     <ClInclude Include="StochasticNumber.cuh" />
+    <ClInclude Include="BasicCombinatorial.cuh" />
+    <ClInclude Include="CircuitComponent.cuh" />
+    <ClInclude Include="CombinatorialComponent.cuh" />
+    <ClInclude Include="StochasticCircuit.cuh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

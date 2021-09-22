@@ -23,7 +23,7 @@ public:
 
 	/// <param name="num_setups">Number of different circuit setups to test</param>
 	/// <param name="num_iterations">Number of iterations (with potentially different parameters) to run per setup</param>
-	Testbench(uint32_t num_setups, uint32_t num_iterations) : num_setups(num_setups), num_iterations(num_iterations), factory(new StochasticCircuitFactory()) {
+	Testbench(uint32_t num_setups, uint32_t num_iterations) : num_setups(num_setups), num_iterations(num_iterations), factory(new StochasticCircuitFactory(false)) {
 		circuit = nullptr;
 	}
 
@@ -57,16 +57,17 @@ public:
 				std::cout << "Building setup " << setup << std::endl;
 
 				factory->reset();
-				factory->set_host_only(false);
-				uint32_t desired_iters = build_circuit(setup); //build circuit setup
-				uint32_t setup_iters = __min(desired_iters, num_iterations);
 
 				//create circuit and measure time taken
 				auto build_start = std::chrono::steady_clock::now();
-				circuit = factory->create_circuit();
-				auto build_end = std::chrono::steady_clock::now();
 
+				uint32_t desired_iters = build_circuit(setup); //build circuit setup
+				circuit = factory->create_circuit();
+
+				auto build_end = std::chrono::steady_clock::now();
 				ss << setup << CSV_SEPARATOR << std::chrono::duration_cast<std::chrono::microseconds>(build_end - build_start).count() / 1000.0;
+
+				uint32_t setup_iters = __min(desired_iters, num_iterations);				
 
 				for (uint32_t iteration = 0; iteration < setup_iters; iteration++) { //iterate over iterations
 					std::cout << "Running iteration " << iteration << " host" << std::endl;

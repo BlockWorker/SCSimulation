@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <initializer_list>
 #include "CombinatorialComponent.cuh"
-#include "dll.h"
+#include "circuit_component_defines.cuh"
 
 namespace scsim {
 
@@ -16,8 +16,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-	protected:
-		virtual void link_dev_functions() override;
+		decl_device_statics(Inverter)
 
 	};
 
@@ -30,8 +29,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-	protected:
-		virtual void link_dev_functions() override;
+		decl_device_statics(AndGate)
 
 	};
 
@@ -44,8 +42,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-	protected:
-		virtual void link_dev_functions() override;
+		decl_device_statics(NandGate)
 
 	};
 
@@ -58,8 +55,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-	protected:
-		virtual void link_dev_functions() override;
+		decl_device_statics(OrGate)
 
 	};
 
@@ -72,8 +68,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-	protected:
-		virtual void link_dev_functions() override;
+		decl_device_statics(NorGate)
 
 	};
 
@@ -86,8 +81,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-	protected:
-		virtual void link_dev_functions() override;
+		decl_device_statics(XorGate)
 
 	};
 
@@ -100,8 +94,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-	protected:
-		virtual void link_dev_functions() override;
+		decl_device_statics(XnorGate)
 
 	};
 
@@ -114,8 +107,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-	protected:
-		virtual void link_dev_functions() override;
+		decl_device_statics(Multiplexer2)
 
 	};
 
@@ -141,8 +133,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-	protected:
-		virtual void link_dev_functions() override;
+		decl_device_statics(MultiplexerN)
 
 	private:
 		const uint32_t num_mux_inputs;
@@ -166,8 +157,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-	protected:
-		virtual void link_dev_functions() override;
+		decl_device_statics(Delay)
 
 	};
 

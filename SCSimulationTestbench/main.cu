@@ -38,10 +38,11 @@ std::pair<uint32_t, uint32_t> max_setups_nn(uint64_t max_mem, uint32_t layercoun
 	if (min_sim_len_words <= 8) min_sim_len_words = 8;
 	else if (min_sim_len_words <= 16) min_sim_len_words = 16;
 	else min_sim_len_words = ((min_sim_len_words + 31) / 32) * 32;
-	uint32_t max_setups = 1;
+	uint32_t max_setups = 0;
 	uint64_t comp_bytes = 0;
 	uint64_t net_bytes = 0;
-	while (max_setups <= 7) {
+	while (max_setups < 7) {
+		max_setups++;
 		uint32_t setup_layersize = 16 * (1 << (max_setups - 1));
 		uint32_t setup_components = layercount * setup_layersize * (setup_layersize + 2);
 		uint32_t setup_nets = setup_layersize + layercount * ((uint32_t)ceil(log2(setup_layersize)) + setup_layersize * (2 * setup_layersize + 2));
@@ -52,7 +53,6 @@ std::pair<uint32_t, uint32_t> max_setups_nn(uint64_t max_mem, uint32_t layercoun
 		}
 		comp_bytes = MEM_PER_COMP * setup_components;
 		net_bytes = sizeof(uint32_t) * min_sim_len_words * setup_nets;
-		max_setups++;
 	}
 
 	uint64_t max_lastsetup_simlen_factor = (max_mem - comp_bytes) / net_bytes;
@@ -68,11 +68,12 @@ std::pair<uint32_t, uint32_t> max_layers_nn(uint64_t max_mem, uint32_t layersize
 	else if (min_sim_len_words <= 16) min_sim_len_words = 16;
 	else min_sim_len_words = ((min_sim_len_words + 31) / 32) * 32;
 	uint32_t layer_components = layersize * (layersize + 2);
-	uint32_t layer_nets = layersize * (2 * layersize + (uint32_t)ceil(log2(layersize)) + 2);
-	uint32_t max_layers = 1;
+	uint32_t layer_nets = layersize * (2 * layersize + 2) + (uint32_t)ceil(log2(layersize));
+	uint32_t max_layers = 0;
 	uint64_t comp_bytes = 0;
 	uint64_t net_bytes = 0;
-	while (max_layers <= 16) {
+	while (max_layers <= 32) {
+		max_layers++;
 		uint32_t setup_components = max_layers * layer_components;
 		uint32_t setup_nets = layersize + max_layers * layer_nets;
 		uint64_t setup_bytes = MEM_PER_COMP * setup_components + sizeof(uint32_t) * (min_sim_len_words + 1) * setup_nets;
@@ -82,7 +83,6 @@ std::pair<uint32_t, uint32_t> max_layers_nn(uint64_t max_mem, uint32_t layersize
 		}
 		comp_bytes = MEM_PER_COMP * setup_components;
 		net_bytes = sizeof(uint32_t) * min_sim_len_words * setup_nets;
-		max_layers++;
 	}
 
 	uint64_t max_simlen_factor = (max_mem - comp_bytes) / net_bytes;
@@ -153,7 +153,7 @@ void run(uint64_t max_mem) {
 	}
 	//*
 	std::cout << "**** Running cycle testbench ****" << std::endl;
-	runBench(new CycleTestbench(MIN_SN_LENGTH, max_setups_2c2n, 7), "results0", "cycle.csv");
+	runBench(new CycleTestbench(MIN_SN_LENGTH, max_setups_2c2n - 1, 7), "results0", "cycle.csv");
 	//*/
 	std::cout << std::endl << "******** SIMULATION SUCCESSFULLY FINISHED ********" << std::endl;
 }
