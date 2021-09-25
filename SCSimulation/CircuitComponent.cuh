@@ -10,7 +10,7 @@
 /// <param name="factory">Pointer to the factory to add the component to</param>
 /// <param name="Type">Component type</param>
 /// <param name="__VA_ARGS__">Component constructor arguments (excluding factory)</param>
-#define factory_add_component(factory, Type, ...) factory->add_component(new Type(__VA_ARGS__, (StochasticCircuitFactory*)factory))
+#define factory_add_component(factory, Type, ...) (factory).add_component(new Type(__VA_ARGS__, &(factory)))
 
 namespace scsim {
 
@@ -43,33 +43,33 @@ namespace scsim {
 
 		__host__ __device__ uint32_t current_sim_progress() const {
 #ifdef __CUDA_ARCH__
-			return *progress_dev_ptr;
+			return *current_progress_dev_ptr;
 #else
-			return *progress_host_ptr;
+			return *current_progress_host_ptr;
 #endif
 		}
 
 		__host__ __device__ uint32_t current_sim_progress_word() const {
 #ifdef __CUDA_ARCH__
-			return *progress_dev_ptr / 32;
+			return *current_progress_dev_ptr / 32;
 #else
-			return *progress_host_ptr / 32;
+			return *current_progress_host_ptr / 32;
 #endif
 		}
 
 		__host__ __device__ uint32_t next_sim_progress() const {
 #ifdef __CUDA_ARCH__
-			return *(progress_dev_ptr + 1);
+			return *next_step_progress_dev_ptr;
 #else
-			return *(progress_host_ptr + 1);
+			return *next_step_progress_host_ptr;
 #endif
 		}
 
 		__host__ __device__ uint32_t next_sim_progress_word() const {
 #ifdef __CUDA_ARCH__
-			return (*(progress_dev_ptr + 1) + 31) / 32;
+			return (*next_step_progress_dev_ptr + 31) / 32;
 #else
-			return (*(progress_host_ptr + 1) + 31) / 32;
+			return (*next_step_progress_host_ptr + 31) / 32;
 #endif
 		}
 
@@ -100,8 +100,10 @@ namespace scsim {
 		uint32_t* net_progress_dev;
 		uint32_t sim_length;
 
-		uint32_t* progress_host_ptr;
-		uint32_t* progress_dev_ptr;
+		uint32_t* current_progress_host_ptr;
+		uint32_t* next_step_progress_host_ptr;
+		uint32_t* current_progress_dev_ptr;
+		uint32_t* next_step_progress_dev_ptr;
 
 		size_t* input_offsets_host;
 		size_t* output_offsets_host;

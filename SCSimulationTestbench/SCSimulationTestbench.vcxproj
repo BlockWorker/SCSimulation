@@ -84,7 +84,9 @@
       <Include>$(SolutionDir)SCSimulation\;%(Include)</Include>
       <AdditionalOptions>-std=c++17 %(AdditionalOptions)</AdditionalOptions>
       <PtxAsOptionV>true</PtxAsOptionV>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
     </CudaCompile>
+    <CudaLink />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -107,7 +109,10 @@
       <Include>$(SolutionDir)SCSimulation\;%(Include)</Include>
       <AdditionalOptions>-std=c++17 %(AdditionalOptions)</AdditionalOptions>
       <GenerateLineInfo>true</GenerateLineInfo>
+      <PtxAsOptionV>true</PtxAsOptionV>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
     </CudaCompile>
+    <CudaLink />
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

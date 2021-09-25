@@ -4,7 +4,7 @@
 #include "curand.h"
 #include <stdio.h>
 
-//wrapper macro to detect cuRAND errors
+//wrapper macro to detect errors in cuRAND API calls
 #define cur(call) do { curandStatus_t ___stat = (call); if (___stat != CURAND_STATUS_SUCCESS) throw scsim::CurandError(___stat); } while (false)
 
 namespace scsim {

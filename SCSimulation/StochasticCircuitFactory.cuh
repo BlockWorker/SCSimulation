@@ -18,6 +18,7 @@ namespace scsim {
 	public:
 		const bool host_only;
 
+		/// <param name="host_only">Whether the created circuits are only simulated on the host</param>
 		StochasticCircuitFactory(bool host_only);
 		~StochasticCircuitFactory();
 
@@ -25,7 +26,7 @@ namespace scsim {
 
 		StochasticCircuit* create_circuit();
 
-		/// <param name="sim_length">Desired length of the simulation in bits</param>
+		/// <param name="sim_length">Desired simulation time span in bit times</param>
 		void set_sim_length(uint32_t sim_length);
 
 		/// <returns>Index of newly added net</returns>

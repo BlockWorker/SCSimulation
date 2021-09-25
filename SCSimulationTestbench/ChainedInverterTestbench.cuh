@@ -42,9 +42,9 @@ protected:
 			curr_max_sim_length *= 2;
 		}
 
-		factory->set_sim_length(curr_max_sim_length);
+		factory.set_sim_length(curr_max_sim_length);
 
-		auto netids = factory->add_nets(count + 1);
+		auto netids = factory.add_nets(count + 1);
 		in = netids.first;
 		out = netids.second;
 

@@ -23,13 +23,12 @@ public:
 
 	/// <param name="num_setups">Number of different circuit setups to test</param>
 	/// <param name="num_iterations">Number of iterations (with potentially different parameters) to run per setup</param>
-	Testbench(uint32_t num_setups, uint32_t num_iterations) : num_setups(num_setups), num_iterations(num_iterations), factory(new StochasticCircuitFactory(false)) {
+	Testbench(uint32_t num_setups, uint32_t num_iterations) : num_setups(num_setups), num_iterations(num_iterations), factory(StochasticCircuitFactory(false)) {
 		circuit = nullptr;
 	}
 
 	virtual ~Testbench() {
 		delete circuit;
-		delete factory;
 	}
 
 	Testbench(const Testbench& other) = delete;
@@ -56,13 +55,13 @@ public:
 
 				std::cout << "Building setup " << setup << std::endl;
 
-				factory->reset();
+				factory.reset();
 
 				//create circuit and measure time taken
 				auto build_start = std::chrono::steady_clock::now();
 
 				uint32_t desired_iters = build_circuit(setup); //build circuit setup
-				circuit = factory->create_circuit();
+				circuit = factory.create_circuit();
 
 				auto build_end = std::chrono::steady_clock::now();
 				ss << setup << CSV_SEPARATOR << std::chrono::duration_cast<std::chrono::microseconds>(build_end - build_start).count() / 1000.0;
@@ -125,7 +124,7 @@ public:
 
 protected:
 	StochasticCircuit* circuit;
-	StochasticCircuitFactory* const factory;
+	StochasticCircuitFactory factory;
 
 	/// <summary>
 	/// Write additional CSV column titles if required, each preceded by CSV_SEPARATOR

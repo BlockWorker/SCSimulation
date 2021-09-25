@@ -12,6 +12,9 @@
     <CudaCompile Include="Stanh.cu">
       <Filter>Components</Filter>
     </CudaCompile>
+    <CudaCompile Include="LFSR.cu">
+      <Filter>Components</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libpopcnt.h" />
@@ -30,6 +33,9 @@
     <ClInclude Include="StochasticCircuit.cuh" />
     <ClInclude Include="dll.h" />
     <ClInclude Include="BasicCombinatorial.cuh">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="LFSR.cuh">
       <Filter>Components</Filter>
     </ClInclude>
   </ItemGroup>

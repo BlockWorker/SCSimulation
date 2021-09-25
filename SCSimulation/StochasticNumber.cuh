@@ -24,7 +24,9 @@ namespace scsim {
 
 		~StochasticNumber();
 		StochasticNumber(const StochasticNumber& other);
-		StochasticNumber& operator=(const StochasticNumber& other);
+
+		StochasticNumber& operator=(const StochasticNumber&) = delete;
+		StochasticNumber& operator=(StochasticNumber&&) = delete;
 
 		/// <returns>SN with given value in unipolar encoding, guaranteed best possible accuracy for given length</returns>
 		static StochasticNumber* generate_unipolar(uint32_t length, double value);

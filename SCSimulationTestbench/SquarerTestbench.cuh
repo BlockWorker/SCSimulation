@@ -50,11 +50,11 @@ protected:
 			curr_max_sim_length *= 2;
 		}
 
-		factory->set_sim_length(curr_max_sim_length);
+		factory.set_sim_length(curr_max_sim_length);
 
-		first_in = factory->add_nets(count + 1).first;
-		first_int = factory->add_nets(count + 1).first;
-		first_out = factory->add_nets(count + 1).first;
+		first_in = factory.add_nets(count + 1).first;
+		first_int = factory.add_nets(count + 1).first;
+		first_out = factory.add_nets(count + 1).first;
 
 		for (uint32_t i = 0; i <= count; i++) {
 			factory_add_component(factory, BitwiseDelay, first_in + i, first_int + i);

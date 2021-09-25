@@ -68,12 +68,12 @@ protected:
 		random_num_count = layercount * layersize * layersize + layersize;
 		num_count = random_num_count + select_num_count;
 
-		factory->set_sim_length(curr_max_sim_length);
+		factory.set_sim_length(curr_max_sim_length);
 
-		first_in = factory->add_nets(random_num_count).first;
+		first_in = factory.add_nets(random_num_count).first;
 		auto first_weight = first_in + layersize;
-		auto first_sel = factory->add_nets(select_num_count).first;
-		auto first_int = factory->add_nets(layercount * layersize).first;
+		auto first_sel = factory.add_nets(select_num_count).first;
+		auto first_int = factory.add_nets(layercount * layersize).first;
 
 		build_layer(first_in, first_weight, first_sel, first_int);
 		for (uint32_t i = 1; i < layercount; i++) {
@@ -127,7 +127,7 @@ protected:
 private:
 	void build_layer(uint32_t first_layer_in, uint32_t first_layer_weight, uint32_t first_layer_sel, uint32_t first_layer_out) {
 		for (uint32_t i = 0; i < layersize; i++) {
-			auto added_nets = factory->add_nets(layersize + 1);
+			auto added_nets = factory.add_nets(layersize + 1);
 			auto first_mux_in = added_nets.first;
 			auto mux_stanh_int = added_nets.second;
 

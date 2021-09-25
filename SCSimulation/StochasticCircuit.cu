@@ -205,6 +205,8 @@ namespace scsim {
 	}
 
 	void StochasticCircuit::simulate_circuit_dev_nocopy() {
+		if (host_only) throw std::exception("simulate_circuit_dev_nocopy: This function is not supported for host-only circuits.");
+
 		uint32_t block_size_calcp = __min(num_components, 256);
 		uint32_t num_blocks_calcp = block_size_calcp == 0 ? 0 : (num_components + block_size_calcp - 1) / block_size_calcp;
 
@@ -235,6 +237,7 @@ namespace scsim {
 			int finished_components = 0;
 
 			calc_sim_progress<<<num_blocks_calcp, block_size_calcp>>>(components_dev, num_components); //calculate progress for components
+			cu_kernel_errcheck_nosync();
 			copy_component_progress_from_device(); //copy component progress to host
 
 			//combinatorial components
@@ -288,11 +291,13 @@ namespace scsim {
 
 				//simulate
 				exec_sim_step<<<grid_size, block_size>>>(components_dev, sim_comb_dev, comb_type_counts_dev, comb_type_offsets_dev);
+				cu_kernel_errcheck();
 
 				//mark step as finished
 				uint32_t block_size_fin = __min(sim_comb.size(), 256);
 				uint32_t num_blocks_fin = (sim_comb.size() + block_size_fin - 1) / block_size_fin;
 				finish_sim_step<<<num_blocks_fin, block_size_fin>>>(components_dev, sim_comb_dev, sim_comb.size());
+				cu_kernel_errcheck();
 			}
 
 			//sequential components, similar to combinatorial as shown above
@@ -331,10 +336,12 @@ namespace scsim {
 				dim3 grid_size((max_num_threads + block_size - 1) / block_size, 1, seq_type_counts.size());
 
 				exec_sim_step<<<grid_size, block_size>>>(components_dev, sim_seq_dev, seq_type_counts_dev, seq_type_offsets_dev);
+				cu_kernel_errcheck();
 
 				uint32_t block_size_fin = __min(sim_seq.size(), 256);
 				uint32_t num_blocks_fin = (sim_seq.size() + block_size_fin - 1) / block_size_fin;
 				finish_sim_step<<<num_blocks_fin, block_size_fin>>>(components_dev, sim_seq_dev, sim_seq.size());
+				cu_kernel_errcheck();
 			}
 
 			if (finished_components == num_components) simulation_finished = true; //done if all components finished
@@ -350,7 +357,7 @@ namespace scsim {
 
 	StochasticNumber* StochasticCircuit::get_net_value(uint32_t net) {
 		auto progress = net_progress_host[net];
-		if (progress == 0) throw;
+		if (progress == 0) throw std::exception("get_net_value: Given net has no valid data, at least one bit must be valid.");
 		return new StochasticNumber(progress, net_values_host + (sim_length_words * net));
 	}
 

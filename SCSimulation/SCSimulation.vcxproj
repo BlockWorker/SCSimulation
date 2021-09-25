@@ -64,6 +64,7 @@
       <PtxAsOptionV>true</PtxAsOptionV>
       <Defines>SCSIMULATION_EXPORT</Defines>
     </CudaCompile>
+    <CudaLink />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -88,12 +89,15 @@
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
       <Defines>SCSIMULATION_EXPORT</Defines>
       <GenerateLineInfo>true</GenerateLineInfo>
+      <PtxAsOptionV>true</PtxAsOptionV>
     </CudaCompile>
+    <CudaLink />
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="BasicCombinatorial.cu" />
     <CudaCompile Include="CircuitComponent.cu" />
     <CudaCompile Include="CombinatorialComponent.cu" />
+    <CudaCompile Include="LFSR.cu" />
     <CudaCompile Include="Stanh.cu" />
     <CudaCompile Include="StochasticCircuit.cu" />
     <CudaCompile Include="StochasticCircuitFactory.cu" />
@@ -104,6 +108,7 @@
     <ClInclude Include="cuda_base.cuh" />
     <ClInclude Include="curand_base.cuh" />
     <ClInclude Include="dll.h" />
+    <ClInclude Include="LFSR.cuh" />
     <ClInclude Include="libpopcnt.h" />
     <ClInclude Include="Range.h" />
     <ClInclude Include="SequentialComponent.cuh" />

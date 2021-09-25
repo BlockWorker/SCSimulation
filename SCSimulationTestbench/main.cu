@@ -41,7 +41,7 @@ std::pair<uint32_t, uint32_t> max_setups_nn(uint64_t max_mem, uint32_t layercoun
 	uint32_t max_setups = 0;
 	uint64_t comp_bytes = 0;
 	uint64_t net_bytes = 0;
-	while (max_setups < 7) {
+	while (max_setups < 10) {
 		max_setups++;
 		uint32_t setup_layersize = 16 * (1 << (max_setups - 1));
 		uint32_t setup_components = layercount * setup_layersize * (setup_layersize + 2);

@@ -19,8 +19,10 @@ namespace scsim {
 		sim_length = 0;
 		dev_ptr = nullptr;
 		simulate_step_dev_ptr = nullptr;
-		progress_host_ptr = nullptr;
-		progress_dev_ptr = nullptr;
+		current_progress_host_ptr = nullptr;
+		next_step_progress_host_ptr = nullptr;
+		current_progress_dev_ptr = nullptr;
+		next_step_progress_dev_ptr = nullptr;
 		io_array_offset = factory->component_io.size();
 		factory->component_io.resize(io_array_offset + num_inputs + num_outputs); //make space in factory for IO
 		inputs_host = factory->component_io.data() + io_array_offset; //link IO to factory-stored location for now
@@ -32,12 +34,13 @@ namespace scsim {
 		input_offsets_dev = nullptr;
 		output_offsets_dev = nullptr;
 
-		if (!_dev_link_initialized && !factory->host_only) {
+		if (!_dev_link_initialized && !factory->host_only) { //link default device-side progress calculation function
 			_dev_link_initialized = true;
 			void (*pointer)(CircuitComponent*);
 			void (**dev_pointer)(CircuitComponent*);
 			cu(cudaMalloc(&dev_pointer, sizeof(void (*)(CircuitComponent*))));
 			link_defprog_kern<CircuitComponent><<<1, 1>>>(dev_pointer);
+			cu_kernel_errcheck_nosync();
 			cu(cudaMemcpy(&pointer, dev_pointer, sizeof(void (*)(CircuitComponent*)), cudaMemcpyDeviceToHost));
 			_simprog_ptr = *pointer;
 		}
@@ -76,8 +79,8 @@ namespace scsim {
 			next_step_progress = current_progress;
 		}
 
-		*progress_host_ptr = current_progress;
-		*(progress_host_ptr + 1) = next_step_progress;
+		*current_progress_host_ptr = current_progress;
+		*next_step_progress_host_ptr = next_step_progress;
 	}
 
 	__device__ void CircuitComponent::calculate_simulation_progress_dev() {
@@ -144,13 +147,14 @@ namespace scsim {
 			next_step_progress = current_progress;
 		}
 
-		*comp->progress_dev_ptr = current_progress;
-		*(comp->progress_dev_ptr + 1) = next_step_progress;
+		*comp->current_progress_dev_ptr = current_progress;
+		*comp->next_step_progress_dev_ptr = next_step_progress;
 	}
 
 	void CircuitComponent::init_with_circuit(StochasticCircuit* circuit, uint32_t* progress_host_ptr, uint32_t* progress_dev_ptr, size_t* dev_offset_scratchpad) {
 		this->circuit = circuit;
-		this->progress_host_ptr = progress_host_ptr;
+		current_progress_host_ptr = progress_host_ptr;
+		next_step_progress_host_ptr = progress_host_ptr + 1;
 		inputs_host = circuit->component_io_host + io_array_offset; //re-link to circuit-stored inputs and outputs, as well as offsets
 		outputs_host = inputs_host + num_inputs;
 		input_offsets_host = circuit->component_io_offsets_host + io_array_offset;
@@ -159,7 +163,8 @@ namespace scsim {
 			net_values_dev = circuit->net_values_dev;
 			net_progress_dev = circuit->net_progress_dev;
 			sim_length = circuit->sim_length;
-			this->progress_dev_ptr = progress_dev_ptr;
+			current_progress_dev_ptr = progress_dev_ptr;
+			next_step_progress_dev_ptr = progress_dev_ptr + 1;
 			inputs_dev = circuit->component_io_dev + io_array_offset;
 			outputs_dev = inputs_dev + num_inputs;
 			input_offsets_dev = circuit->component_io_offsets_dev + io_array_offset;

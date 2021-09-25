@@ -75,13 +75,8 @@ namespace scsim {
 
 	}
 
-	StochasticNumber& StochasticNumber::operator=(const StochasticNumber& other) {
-		free(data);
-		return *this = StochasticNumber(other);
-	}
-
 	StochasticNumber* StochasticNumber::generate_unipolar(uint32_t length, double value) {
-		if (value < 0. || value > 1.) throw;
+		if (value < 0. || value > 1.) throw std::exception("StochasticNumber generate: Given value is outside the encodable value range.");
 
 		auto ret = new StochasticNumber(length);
 
@@ -153,6 +148,7 @@ namespace scsim {
 				dim3 grid_size(batch_size, (word_length + block_size - 1) / block_size);
 
 				sngen_kern<<<grid_size, block_size>>>(rand_dev, val_dev, sn_dev, sn_dev_pitch, gen_length, word_length); //generate actual SNs on device
+				cu_kernel_errcheck();
 
 				//create SN objects based on device data
 				for (size_t i = 0; i < batch_size; i++) {
@@ -279,7 +275,7 @@ namespace scsim {
 
 	//see SCC metric for more information
 	double StochasticNumber::get_correlation(StochasticNumber* x, StochasticNumber* y) {
-		if (x->length != y->length) throw;
+		if (x->length != y->length) throw std::exception("get_correlation: Both numbers must have the same length.");
 
 		auto length = x->length;
 		auto words = x->word_length;

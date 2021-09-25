@@ -308,7 +308,7 @@ namespace scsim {
 	MultiplexerN::MultiplexerN(std::initializer_list<uint32_t> inputs, std::initializer_list<uint32_t> selects, uint32_t output, StochasticCircuitFactory* factory) : num_mux_inputs(inputs.size()), num_selects((uint32_t)ceil(log2((double)inputs.size()))),
 		CombinatorialComponent(inputs.size() + (uint32_t)ceil(log2((double)inputs.size())), 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN), factory) {
 
-		if (selects.size() < num_selects) throw;
+		if (selects.size() < num_selects) throw std::exception("MultiplexerN: Not enough select nets given.");
 
 		auto in = inputs.begin();
 		for (uint32_t i = 0; i < inputs.size(); i++) {
@@ -396,8 +396,8 @@ namespace scsim {
 			next_step_progress = current_progress;
 		}
 
-		*progress_host_ptr = current_progress;
-		*(progress_host_ptr + 1) = next_step_progress;
+		*current_progress_host_ptr = current_progress;
+		*next_step_progress_host_ptr = next_step_progress;
 	}
 
 	void Delay::simulate_step_host() {
@@ -436,8 +436,8 @@ namespace scsim {
 			next_step_progress = current_progress;
 		}
 
-		*g->progress_dev_ptr = current_progress;
-		*(g->progress_dev_ptr + 1) = next_step_progress;
+		*g->current_progress_dev_ptr = current_progress;
+		*g->next_step_progress_dev_ptr = next_step_progress;
 	}
 
 	__device__ void Delay::_simulate_step_dev(CircuitComponent* comp) {

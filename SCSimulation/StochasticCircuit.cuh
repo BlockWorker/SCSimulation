@@ -33,10 +33,10 @@ namespace scsim {
 
 		~StochasticCircuit();
 
-		StochasticCircuit(const StochasticCircuit& other) = delete;
-		StochasticCircuit& operator=(const StochasticCircuit& other) = delete;
-		StochasticCircuit(StochasticCircuit&& other) = delete;
-		StochasticCircuit& operator=(StochasticCircuit&& other) = delete;
+		StochasticCircuit(const StochasticCircuit&) = delete;
+		StochasticCircuit& operator=(const StochasticCircuit&) = delete;
+		StochasticCircuit(StochasticCircuit&&) = delete;
+		StochasticCircuit& operator=(StochasticCircuit&&) = delete;
 
 		void reset_circuit();
 
