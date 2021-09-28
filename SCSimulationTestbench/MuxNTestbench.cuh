@@ -81,7 +81,7 @@ protected:
 		}
 
 		for (uint32_t i = 0; i < 8 * (count + 1); i++) {
-			circuit->set_net_value(first_in + i, numbers[i % (count + 1)]);
+			circuit->set_net_value(first_in + i, *numbers[i % (count + 1)]);
 		}
 		for (uint32_t i = 0; i < 3; i++) {
 			circuit->set_net_value_unipolar(first_sel + i, 0.5, iter_sim_length);

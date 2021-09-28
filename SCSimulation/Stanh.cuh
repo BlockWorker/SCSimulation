@@ -19,7 +19,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-		decl_device_statics(Stanh)
+		decl_device_statics()
 
 	private:
 		const uint32_t k;

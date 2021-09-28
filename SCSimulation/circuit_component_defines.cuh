@@ -50,7 +50,7 @@
 #define link_device_sim_progress_functions(CType) _link_device_both_internal(CType, CType)
 
 //Macro to declare static variables for device function linking, place at the end of the component class
-#define decl_device_statics(Type) \
+#define decl_device_statics() \
 	private: \
 		static bool _dev_link_initialized; \
 		static void (*_devstep_ptr)(CircuitComponent*); \

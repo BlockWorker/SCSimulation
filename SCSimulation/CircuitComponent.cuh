@@ -10,7 +10,8 @@
 /// <param name="factory">Pointer to the factory to add the component to</param>
 /// <param name="Type">Component type</param>
 /// <param name="__VA_ARGS__">Component constructor arguments (excluding factory)</param>
-#define factory_add_component(factory, Type, ...) (factory).add_component(new Type(__VA_ARGS__, &(factory)))
+/// <returns>Index of the added component in the circuit</returns>
+#define factory_add_component(factory, Type, ...) ((factory).add_component(new Type(__VA_ARGS__, &(factory))))
 
 namespace scsim {
 

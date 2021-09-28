@@ -10,26 +10,26 @@
 namespace scsim {
 
 	StochasticCircuit::StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values, uint32_t* net_progress, uint32_t num_components_comb, uint32_t num_components_seq,
-		CircuitComponent** components, uint32_t* component_progress, uint32_t num_component_types, uint32_t* component_io, size_t* component_io_offsets) :
+		CircuitComponent** components, uint32_t* component_progress, uint32_t num_component_types, uint32_t* component_io, size_t* component_io_offsets, StochasticNumber* net_numbers) :
 		host_only(true), sim_length(sim_length), sim_length_words((sim_length + 31) / 32), num_nets(num_nets), net_values_host(net_values), net_values_host_pitch((sim_length + 31) / 32 * sizeof(uint32_t)),
 		net_values_dev(nullptr), net_values_dev_pitch(0), net_progress_host(net_progress), net_progress_dev(nullptr), num_components_comb(num_components_comb), num_components_seq(num_components_seq),
 		num_components(num_components_comb + num_components_seq), components_host(components), components_dev(nullptr), component_array_host(nullptr), component_array_host_pitch(0),
 		component_array_dev(nullptr), component_array_dev_pitch(0), component_progress_host(component_progress), component_progress_dev(nullptr), num_component_types(num_component_types),
-		component_io_host(component_io), component_io_dev(nullptr), component_io_offsets_host(component_io_offsets), component_io_offsets_dev(nullptr) {
+		component_io_host(component_io), component_io_dev(nullptr), component_io_offsets_host(component_io_offsets), component_io_offsets_dev(nullptr), net_numbers(net_numbers) {
 
 	}
 
 	StochasticCircuit::StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values_host, uint32_t* net_values_dev, size_t net_values_dev_pitch, uint32_t* net_progress_host, uint32_t* net_progress_dev,
 		uint32_t num_components_comb, uint32_t num_components_seq, CircuitComponent** components_host, CircuitComponent** components_dev, char* component_array_host, size_t component_array_host_pitch,
 		char* component_array_dev, size_t component_array_dev_pitch, uint32_t* component_progress_host, uint32_t* component_progress_dev, uint32_t num_component_types, uint32_t* component_io_host,
-		uint32_t* component_io_dev, size_t* component_io_offsets_host, size_t* component_io_offsets_dev) :
+		uint32_t* component_io_dev, size_t* component_io_offsets_host, size_t* component_io_offsets_dev, StochasticNumber* net_numbers) :
 		host_only(false), sim_length(sim_length), sim_length_words((sim_length + 31) / 32), num_nets(num_nets), net_values_host(net_values_host),
 		net_values_host_pitch((sim_length + 31) / 32 * sizeof(uint32_t)), net_values_dev(net_values_dev), net_values_dev_pitch(net_values_dev_pitch), net_progress_host(net_progress_host),
 		net_progress_dev(net_progress_dev), num_components_comb(num_components_comb), num_components_seq(num_components_seq), num_components(num_components_comb + num_components_seq),
 		components_host(components_host), components_dev(components_dev), component_array_host(component_array_host), component_array_host_pitch(component_array_host_pitch),
 		component_array_dev(component_array_dev), component_array_dev_pitch(component_array_dev_pitch), component_progress_host(component_progress_host),
 		component_progress_dev(component_progress_dev), num_component_types(num_component_types), component_io_host(component_io_host), component_io_dev(component_io_dev),
-		component_io_offsets_host(component_io_offsets_host), component_io_offsets_dev(component_io_offsets_dev) {
+		component_io_offsets_host(component_io_offsets_host), component_io_offsets_dev(component_io_offsets_dev), net_numbers(net_numbers) {
 
 	}
 
@@ -43,6 +43,10 @@ namespace scsim {
 			for (uint32_t i = 0; i < num_components; i++) {
 				components_host[i]->~CircuitComponent(); //device-accelerated: components are in component array, only deconstruct
 			}
+		}
+
+		for (uint32_t i = 0; i < num_nets; i++) {
+			net_numbers[i].~StochasticNumber();
 		}
 
 		if (!host_only) {
@@ -68,26 +72,32 @@ namespace scsim {
 		free(component_progress_host);
 		free(component_io_host);
 		free(component_io_offsets_host);
+		free(net_numbers);
 	}
 
 	void StochasticCircuit::reset_circuit() {
 		simulation_finished = false;
 		memset(net_progress_host, 0, num_nets * sizeof(uint32_t)); //clear progress on all nets
+		memset(component_progress_host, 0, 2 * num_components * sizeof(uint32_t)); //clear progress on all components
 
 		for (uint32_t i = 0; i < num_components_seq; i++) {
 			components_host[num_components_comb + i]->reset_state(); //reset sequential component states
 		}
 	}
 
-	void StochasticCircuit::set_net_value(uint32_t net, StochasticNumber* value) {
-		memcpy((net_values_host + (sim_length_words * net)), value->get_data(), __min(sim_length_words, value->word_length) * sizeof(uint32_t)); //copy data from SN
-		net_progress_host[net] = __min(sim_length, value->length);
+	void StochasticCircuit::set_net_value(uint32_t net, StochasticNumber& value) {
+		if (net >= num_nets) throw std::exception("set_net_value: Invalid net index.");
+		if (value.length() > sim_length) throw std::exception("set_net_value: SN length exceeds the simulation time span.");
+
+		net_numbers[net] = value;
 	}
 
 	void StochasticCircuit::set_net_value_unipolar(uint32_t net, double value, uint32_t length) {
-		auto tempnum = StochasticNumber::generate_unipolar(length, value);
-		set_net_value(net, tempnum);
-		delete tempnum;
+		if (net >= num_nets) throw std::exception("set_net_value_unipolar: Invalid net index.");
+		if (length > sim_length) throw std::exception("set_net_value_unipolar: Length exceeds the simulation time span.");
+
+		net_numbers[net].set_length(length);
+		net_numbers[net].set_value_unipolar(value);
 	}
 
 	void StochasticCircuit::set_net_value_unipolar(uint32_t net, double value) {
@@ -95,27 +105,98 @@ namespace scsim {
 	}
 
 	void StochasticCircuit::set_net_value_bipolar(uint32_t net, double value, uint32_t length) {
-		auto tempnum = StochasticNumber::generate_bipolar(length, value);
-		set_net_value(net, tempnum);
-		delete tempnum;
+		if (net >= num_nets) throw std::exception("set_net_value_bipolar: Invalid net index.");
+		if (length > sim_length) throw std::exception("set_net_value_bipolar: Length exceeds the simulation time span.");
+
+		net_numbers[net].set_length(length);
+		net_numbers[net].set_value_bipolar(value);
 	}
 
 	void StochasticCircuit::set_net_value_bipolar(uint32_t net, double value) {
 		set_net_value_bipolar(net, value, sim_length);
 	}
 
-	void StochasticCircuit::set_net_value_constant(uint32_t net, bool value, uint32_t length) {
-		auto actual_length = __min(length, sim_length);
-		auto net_value = net_values_host + (sim_length_words * net);
+	void StochasticCircuit::set_net_values_curand(uint32_t* nets, double* values_unipolar, uint32_t count, uint32_t length) {
+		if (host_only) throw std::exception("set_net_values_curand: Cannot be used in host-only circuits.");
+		if (length == 0) throw std::exception("set_net_values_curand: Length must be greater than zero.");
+		if (length > sim_length) throw std::exception("set_net_values_curand: Length exceeds the simulation time span.");
+		if (count == 0) throw std::exception("set_net_values_curand: Count must be greater than zero.");
 
-		auto word_length = actual_length / 32;
-		if (word_length > 0) memset(net_value, value ? 0xff : 0x00, word_length * sizeof(uint32_t));
-
-		auto extra_length = actual_length % 32;
-		if (extra_length > 0) {
-			if (value) net_value[word_length] |= (0xffffffff << (32 - extra_length));
-			else net_value[word_length] &= 0xffffffff >> extra_length;
+		auto netvalue_ptrs = (uint32_t**)malloc(count * sizeof(uint32_t*)); //calculate device pointers for net data
+		for (uint32_t i = 0; i < count; i++) {
+			uint32_t net = nets[i];
+			if (net >= num_nets) throw std::exception("set_net_values_curand: Invalid net index.");
+			netvalue_ptrs[i] = (uint32_t*)((char*)net_values_dev + (net * net_values_dev_pitch));
 		}
+
+		auto word_length = (length + 31) / 32;
+
+		uint32_t max_batch = MAX_CURAND_BATCH_WORDS / word_length; //number of nets in one batch
+
+		copy_data_to_device(length);
+
+		for (uint32_t batch_offset = 0; batch_offset < count; batch_offset += max_batch) { //generate net values
+			uint32_t batch_size = __min(count - batch_offset, max_batch);
+
+			StochasticNumber::generate_bitstreams_curand(netvalue_ptrs + batch_offset, length, values_unipolar + batch_offset, batch_size);
+		}
+
+		copy_data_from_device(length);
+
+		for (uint32_t i = 0; i < count; i++) { //update net progress
+			net_progress_host[nets[i]] = length;
+		}
+
+		free(netvalue_ptrs);
+	}
+
+	void StochasticCircuit::set_net_values_curand(uint32_t* nets, double* values_unipolar, uint32_t count) {
+		set_net_values_curand(nets, values_unipolar, count, sim_length);
+	}
+
+	void StochasticCircuit::set_net_values_curand(uint32_t first_net, double* values_unipolar, uint32_t count, uint32_t length) {
+		if (host_only) throw std::exception("set_net_values_curand: Cannot be used in host-only circuits.");
+		if (length == 0) throw std::exception("set_net_values_curand: Length must be greater than zero.");
+		if (length > sim_length) throw std::exception("set_net_values_curand: Length exceeds the simulation time span.");
+		if (count == 0) throw std::exception("set_net_values_curand: Count must be greater than zero.");
+		if (first_net + count > num_nets) throw std::exception("set_net_values_curand: Invalid first net index and/or too many nets.");
+
+		auto netvalue_ptrs = (uint32_t**)malloc(count * sizeof(uint32_t*)); //calculate device pointers for net data
+		for (uint32_t i = 0; i < count; i++) {
+			netvalue_ptrs[i] = (uint32_t*)((char*)net_values_dev + ((first_net + i) * net_values_dev_pitch));
+		}
+
+		auto word_length = (length + 31) / 32;
+
+		uint32_t max_batch = MAX_CURAND_BATCH_WORDS / word_length; //number of nets in one batch
+
+		copy_data_to_device(length);
+
+		for (uint32_t batch_offset = 0; batch_offset < count; batch_offset += max_batch) { //generate net values
+			uint32_t batch_size = __min(count - batch_offset, max_batch);
+
+			StochasticNumber::generate_bitstreams_curand(netvalue_ptrs + batch_offset, length, values_unipolar + batch_offset, batch_size);
+		}
+
+		copy_data_from_device(length);
+
+		for (uint32_t i = 0; i < count; i++) { //update net progress
+			net_progress_host[first_net + i] = length;
+		}
+
+		free(netvalue_ptrs);
+	}
+
+	void StochasticCircuit::set_net_values_curand(uint32_t first_net, double* values_unipolar, uint32_t count) {
+		set_net_values_curand(first_net, values_unipolar, count, sim_length);
+	}
+
+	void StochasticCircuit::set_net_value_constant(uint32_t net, bool value, uint32_t length) {
+		if (net >= num_nets) throw std::exception("set_net_value_constant: Invalid net index.");
+		if (length > sim_length) throw std::exception("set_net_value_constant: Length exceeds the simulation time span.");
+
+		net_numbers[net].set_length(length);
+		net_numbers[net].set_value_constant(value);
 	}
 
 	void StochasticCircuit::set_net_value_constant(uint32_t net, bool value) {
@@ -149,7 +230,7 @@ namespace scsim {
 		cu(cudaMemcpy2D(net_values_host, net_values_host_pitch, net_values_dev, net_values_dev_pitch, width, num_nets, cudaMemcpyDeviceToHost)); //copy net values
 		cu(cudaMemcpy(net_progress_host, net_progress_dev, num_nets * sizeof(uint32_t), cudaMemcpyDeviceToHost)); //copy net progress
 		cu(cudaMemcpy2D(component_array_host, component_array_host_pitch, component_array_dev, component_array_dev_pitch, component_array_host_pitch, num_components, cudaMemcpyDeviceToHost)); //copy component array
-		cu(cudaMemcpy(component_progress_host, component_progress_dev, 2 * num_components * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+		copy_component_progress_from_device();
 	}
 
 	void StochasticCircuit::simulate_circuit_host_only() {
@@ -355,24 +436,36 @@ namespace scsim {
 		cu(cudaFree(seq_type_offsets_dev));
 	}
 
-	StochasticNumber* StochasticCircuit::get_net_value(uint32_t net) {
-		auto progress = net_progress_host[net];
-		if (progress == 0) throw std::exception("get_net_value: Given net has no valid data, at least one bit must be valid.");
-		return new StochasticNumber(progress, net_values_host + (sim_length_words * net));
+	StochasticNumber& StochasticCircuit::get_net_value(uint32_t net) {
+		if (net >= num_nets) throw std::exception("get_net_value: Invalid net index.");
+
+		return net_numbers[net];
 	}
 
-	double StochasticCircuit::get_net_value_unipolar(uint32_t net) {
-		auto num = get_net_value(net);
-		auto ret = num->get_value_unipolar();
-		delete num;
-		return ret;
+	const StochasticNumber& StochasticCircuit::get_net_value(uint32_t net) const {
+		if (net >= num_nets) throw std::exception("get_net_value: Invalid net index.");
+
+		return net_numbers[net];
 	}
 
-	double StochasticCircuit::get_net_value_bipolar(uint32_t net) {
-		auto num = get_net_value(net);
-		auto ret = num->get_value_bipolar();
-		delete num;
-		return ret;
+	double StochasticCircuit::get_net_value_unipolar(uint32_t net) const {
+		if (net >= num_nets) throw std::exception("get_net_value_unipolar: Invalid net index.");
+		if (net_progress_host[net] == 0) throw std::exception("get_net_value_unipolar: Given net is undefined for the entire simulation time span.");
+
+		return net_numbers[net].get_value_unipolar();
+	}
+
+	double StochasticCircuit::get_net_value_bipolar(uint32_t net) const {
+		if (net >= num_nets) throw std::exception("get_net_value_bipolar: Invalid net index.");
+		if (net_progress_host[net] == 0) throw std::exception("get_net_value_bipolar: Given net is undefined for the entire simulation time span.");
+
+		return net_numbers[net].get_value_bipolar();
+	}
+
+	CircuitComponent* StochasticCircuit::get_component(uint32_t index) {
+		if (index >= num_components) throw std::exception("get_component: Invalid component index.");
+
+		return components_host[index];
 	}
 
 	void StochasticCircuit::copy_component_progress_from_device() {

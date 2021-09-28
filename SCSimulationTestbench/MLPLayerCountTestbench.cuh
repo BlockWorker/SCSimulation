@@ -89,7 +89,7 @@ protected:
 		}
 
 		for (uint32_t i = 0; i < num_count; i++) {
-			circuit->set_net_value(first_in + i, numbers[i]);
+			circuit->set_net_value(first_in + i, *numbers[i]);
 		}
 
 		if (device) {

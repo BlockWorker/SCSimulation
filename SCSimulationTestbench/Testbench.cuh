@@ -68,7 +68,7 @@ public:
 
 				uint32_t setup_iters = __min(desired_iters, num_iterations);				
 
-				for (uint32_t iteration = 0; iteration < setup_iters; iteration++) { //iterate over iterations
+				for (uint32_t iteration = 0; iteration < setup_iters; iteration++) { //go through iterations
 					std::cout << "Running iteration " << iteration << " host" << std::endl;
 
 					circuit->reset_circuit();

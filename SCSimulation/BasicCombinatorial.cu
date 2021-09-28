@@ -1,10 +1,8 @@
 #include "cuda_base.cuh"
 
 #include <memory.h>
-#include <typeinfo>
 
 #include "StochasticCircuit.cuh"
-#include "StochasticCircuitFactory.cuh"
 #include "BasicCombinatorial.cuh"
 
 #undef COMP_IMPEXP_SPEC

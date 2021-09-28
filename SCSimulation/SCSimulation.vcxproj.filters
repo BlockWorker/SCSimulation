@@ -44,4 +44,7 @@
       <UniqueIdentifier>{7b8793a3-05ce-4f92-be47-7c5b881b8918}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="postbuild.bat" />
+  </ItemGroup>
 </Project>

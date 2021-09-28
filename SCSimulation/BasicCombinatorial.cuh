@@ -16,7 +16,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-		decl_device_statics(Inverter)
+		decl_device_statics()
 
 	};
 
@@ -29,7 +29,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-		decl_device_statics(AndGate)
+		decl_device_statics()
 
 	};
 
@@ -42,7 +42,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-		decl_device_statics(NandGate)
+		decl_device_statics()
 
 	};
 
@@ -55,7 +55,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-		decl_device_statics(OrGate)
+		decl_device_statics()
 
 	};
 
@@ -68,7 +68,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-		decl_device_statics(NorGate)
+		decl_device_statics()
 
 	};
 
@@ -81,7 +81,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-		decl_device_statics(XorGate)
+		decl_device_statics()
 
 	};
 
@@ -94,7 +94,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-		decl_device_statics(XnorGate)
+		decl_device_statics()
 
 	};
 
@@ -107,7 +107,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-		decl_device_statics(Multiplexer2)
+		decl_device_statics()
 
 	};
 
@@ -122,7 +122,7 @@ namespace scsim {
 		MultiplexerN(uint32_t _num_inputs, uint32_t* inputs, uint32_t* selects, uint32_t output, StochasticCircuitFactory* factory);
 
 		/// <param name="first_input">first input net index, further inputs assigned consecutive indices</param>
-		/// <param name="first_select">first select net index, further selects  assigned consecutive indices, must have sufficient nets available (ceil(log2(num_inputs)))</param>
+		/// <param name="first_select">first select net index, further selects assigned consecutive indices, must have sufficient nets available (ceil(log2(num_inputs)))</param>
 		MultiplexerN(uint32_t _num_inputs, uint32_t first_input, uint32_t first_select, uint32_t output, StochasticCircuitFactory* factory);
 
 		/// <param name="inputs">list of input net indices</param>
@@ -133,7 +133,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-		decl_device_statics(MultiplexerN)
+		decl_device_statics()
 
 	private:
 		const uint32_t num_mux_inputs;
@@ -157,7 +157,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-		decl_device_statics(Delay)
+		decl_device_statics()
 
 	};
 

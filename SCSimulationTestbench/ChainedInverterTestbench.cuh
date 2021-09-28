@@ -69,7 +69,7 @@ protected:
 
 		if (!device) number = StochasticNumber::generate_unipolar(iter_sim_length, 0.25);
 
-		circuit->set_net_value(in, number);
+		circuit->set_net_value(in, *number);
 
 		if (device) delete number;
 
@@ -81,7 +81,7 @@ protected:
 	}
 
 	virtual void post_setup(uint32_t setup, std::stringstream& ss) override {
-		ss << CSV_SEPARATOR << (setup % 2 == 0) ? "Forward" : "Backward";
+		ss << CSV_SEPARATOR << ((setup % 2 == 0) ? "Forward" : "Backward");
 	}
 
 };

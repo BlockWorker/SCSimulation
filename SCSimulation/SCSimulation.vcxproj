@@ -92,6 +92,9 @@
       <PtxAsOptionV>true</PtxAsOptionV>
     </CudaCompile>
     <CudaLink />
+    <PostBuildEvent>
+      <Command>$(ProjectDir)postbuild.bat $(ProjectDir) $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="BasicCombinatorial.cu" />
@@ -119,6 +122,9 @@
     <ClInclude Include="CircuitComponent.cuh" />
     <ClInclude Include="CombinatorialComponent.cuh" />
     <ClInclude Include="StochasticCircuit.cuh" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="postbuild.bat" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -18,7 +18,7 @@ namespace scsim {
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 
-		decl_device_statics(LFSR)
+		decl_device_statics()
 
 	};
 

@@ -7,6 +7,7 @@
 namespace scsim {
 
 	class StochasticCircuit;
+	class StochasticNumber;
 	class CircuitComponent;
 	class CombinatorialComponent;
 
@@ -35,12 +36,15 @@ namespace scsim {
 		/// <returns>Indices of first and last newly added nets</returns>
 		std::pair<uint32_t, uint32_t> add_nets(uint32_t count);
 
-		void add_component(CombinatorialComponent* component);
+		/// <summary>It is recommended to use the factory_add_component macro to add components instead of calling this function directly.</summary>
+		uint32_t add_component(CombinatorialComponent* component);
 
+		/// <summary>It is recommended to use the factory_add_component macro to add components instead of calling this function directly.</summary>
 		template<size_t state_size>
-		void add_component(SequentialComponent<state_size>* component) {
-			add_component_internal(component);
+		uint32_t add_component(SequentialComponent<state_size>* component) {
+			uint32_t index = add_component_internal(component);
 			num_seq_comp++;
+			return index;
 		}
 
 	private:
@@ -73,7 +77,9 @@ namespace scsim {
 		size_t* dev_offset_scratchpad;
 		CircuitComponent** dev_pointers_scratchpad;
 
-		void add_component_internal(CircuitComponent* component);
+		StochasticNumber* net_numbers;
+
+		uint32_t add_component_internal(CircuitComponent* component);
 
 	};
 

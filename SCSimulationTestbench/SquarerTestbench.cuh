@@ -81,7 +81,7 @@ protected:
 		}
 
 		for (uint32_t i = 0; i <= count; i++) {
-			circuit->set_net_value(first_in + i, numbers[i]);
+			circuit->set_net_value(first_in + i, *numbers[i]);
 		}
 
 		if (device) {
@@ -109,13 +109,13 @@ protected:
 		for (uint32_t i = 0; i <= count; i++) {
 			auto correct_in = (double)i / (double)count;
 			auto actual_in_sn = circuit->get_net_value(first_in + i);
-			auto actual_in = actual_in_sn->get_value_unipolar();
+			auto actual_in = actual_in_sn.get_value_unipolar();
 			auto in_err = actual_in - correct_in;
 			errsum_in += in_err * in_err;
 
 			auto int_correct_out = actual_in * actual_in;
 			auto actual_out_sn = circuit->get_net_value(first_out + i);
-			auto actual_out = actual_out_sn->get_value_unipolar();
+			auto actual_out = actual_out_sn.get_value_unipolar();
 			auto out_err = actual_out - int_correct_out;
 			errsum_out += out_err * out_err;
 
@@ -123,14 +123,11 @@ protected:
 			auto total_err = actual_out - total_correct_out;
 			errsum_total += total_err * total_err;
 
-			auto autocorr_in = actual_in_sn->get_autocorrelation(1);
-			auto autocorr_out = actual_out_sn->get_autocorrelation(1);
+			auto autocorr_in = actual_in_sn.get_autocorrelation(1);
+			auto autocorr_out = actual_out_sn.get_autocorrelation(1);
 
 			autocorr_in_sqrsum += autocorr_in * autocorr_in;
 			autocorr_out_sqrsum += autocorr_out * autocorr_out;
-
-			delete actual_in_sn;
-			delete actual_out_sn;
 		}
 		auto rmse_in = sqrt(errsum_in / (double)(count + 1));
 		auto rmse_out = sqrt(errsum_out / (double)(count + 1));
