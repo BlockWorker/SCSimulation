@@ -93,7 +93,7 @@
     </CudaCompile>
     <CudaLink />
     <PostBuildEvent>
-      <Command>$(ProjectDir)postbuild.bat $(ProjectDir) $(OutDir)</Command>
+      <Command>"$(ProjectDir)postbuild.bat" "$(ProjectDir)" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -1,6 +1,6 @@
 echo Copying header files to output...
 setlocal
-set outdir=%2headers
+set outdir="%2headers"
 rd /s /q %outdir% 2>nul
 mkdir %outdir%
 copy /b %1BasicCombinatorial.cuh %outdir% 1>nul
