@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include "CircuitComponent.cuh"
-#include "dll.h"
+#include "library_export.h"
 
 namespace scsim {
 

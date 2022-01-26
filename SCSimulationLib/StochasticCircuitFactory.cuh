@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <vector>
-#include "dll.h"
+#include "library_export.h"
 
 namespace scsim {
 

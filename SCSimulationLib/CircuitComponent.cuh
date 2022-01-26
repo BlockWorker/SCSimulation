@@ -2,7 +2,7 @@
 
 #include "cuda_base.cuh"
 #include <stdint.h>
-#include "dll.h"
+#include "library_export.h"
 
 /// <summary>
 /// Use this macro to add components to a circuit factory.

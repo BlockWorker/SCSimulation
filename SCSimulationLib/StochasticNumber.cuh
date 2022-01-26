@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "dll.h"
+#include "library_export.h"
 
 namespace scsim {
 

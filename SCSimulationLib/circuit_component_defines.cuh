@@ -3,7 +3,7 @@
 #include "cuda_base.cuh"
 #include "StochasticCircuitFactory.cuh"
 #include "StochasticCircuit.cuh"
-#include "dll.h"
+#include "library_export.h"
 #include <typeinfo>
 
 #define COMP_IMPEXP_SPEC
