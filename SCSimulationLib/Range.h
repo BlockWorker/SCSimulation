@@ -19,7 +19,7 @@ namespace scsim {
             using value_type = uint32_t;
             using difference_type = ptrdiff_t;
             using pointer = uint32_t*;
-            using reference = uint32_t&;
+            using reference = const uint32_t&;
 
             explicit iterator(uint32_t _from, uint32_t _to, uint32_t _num = 0) : from(_from), to(_to), num(_num) {}
             iterator& operator++() { num = to >= from ? num + 1 : num - 1; return *this; }
