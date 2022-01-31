@@ -63,18 +63,18 @@ namespace scsim {
 		_internal_length = length;
 		if (length > 0) {
 			_data = (uint32_t*)calloc(word_length(), sizeof(uint32_t));
-			if (_data == nullptr) throw std::exception("StochasticNumber: Data allocation failed");
+			if (_data == nullptr) throw std::runtime_error("StochasticNumber: Data allocation failed");
 		} else {
 			_data = nullptr;
 		}
 	}
 
 	StochasticNumber::StochasticNumber(uint32_t length, const uint32_t* data, bool device_data) : data_is_internal(true), _length_ptr(&_internal_length), _external_max_length(0) {
-		if (length == 0) throw std::exception("StochasticNumber: Data-based constructor may not be used to create empty SNs");
+		if (length == 0) throw std::runtime_error("StochasticNumber: Data-based constructor may not be used to create empty SNs");
 		_internal_length = length;
 		auto my_word_length = word_length();
 		_data = (uint32_t*)malloc(my_word_length * sizeof(uint32_t));
-		if (_data == nullptr) throw std::exception("StochasticNumber: Data allocation failed");
+		if (_data == nullptr) throw std::runtime_error("StochasticNumber: Data allocation failed");
 		if (device_data) cu(cudaMemcpy(_data, data, my_word_length * sizeof(uint32_t), cudaMemcpyDeviceToHost));
 		else memcpy(_data, data, my_word_length * sizeof(uint32_t));
 	}
@@ -99,8 +99,8 @@ namespace scsim {
 	}
 
 	StochasticNumber* StochasticNumber::generate_unipolar(uint32_t length, double value) {
-		if (length == 0) throw std::exception("StochasticNumber generate: Length must be greater than zero.");
-		if (value < 0. || value > 1.) throw std::exception("StochasticNumber generate: Given value is outside the encodable value range.");
+		if (length == 0) throw std::runtime_error("StochasticNumber generate: Length must be greater than zero.");
+		if (value < 0. || value > 1.) throw std::runtime_error("StochasticNumber generate: Given value is outside the encodable value range.");
 
 		auto ret = new StochasticNumber(length);
 
@@ -114,7 +114,7 @@ namespace scsim {
 	}
 
 	StochasticNumber* StochasticNumber::generate_constant(uint32_t length, bool value) {
-		if (length == 0) throw std::exception("StochasticNumber generate: Length must be greater than zero.");
+		if (length == 0) throw std::runtime_error("StochasticNumber generate: Length must be greater than zero.");
 
 		auto ret = new StochasticNumber(length);
 
@@ -124,8 +124,8 @@ namespace scsim {
 	}
 
 	void StochasticNumber::generate_multiple_curand(StochasticNumber** numbers, uint32_t length, const double* values_unipolar, size_t count) {
-		if (length == 0) throw std::exception("StochasticNumber generate: Length must be greater than zero.");
-		if (count == 0) throw std::exception("StochasticNumber generate: Count must be greater than zero.");
+		if (length == 0) throw std::runtime_error("StochasticNumber generate: Length must be greater than zero.");
+		if (count == 0) throw std::runtime_error("StochasticNumber generate: Count must be greater than zero.");
 
 		auto word_length = (length + 31) / 32;
 
@@ -176,13 +176,13 @@ namespace scsim {
 				uint32_t new_word_length = (length + 31) / 32;
 				if (new_word_length != word_length()) {
 					auto new_dataptr = (uint32_t*)realloc(_data, new_word_length * sizeof(uint32_t));
-					if (new_dataptr == nullptr) throw std::exception("set_length: Data reallocation failed");
+					if (new_dataptr == nullptr) throw std::runtime_error("set_length: Data reallocation failed");
 					_data = new_dataptr;
 					_internal_length = length;
 				}
 			}
 		} else { //external data: simply adjust length value unless maximum length is exceeded
-			if (length > _external_max_length) throw std::exception("set_length: New length exceeds maximum length");
+			if (length > _external_max_length) throw std::runtime_error("set_length: New length exceeds maximum length");
 			*_length_ptr = length;
 		}
 	}
@@ -198,7 +198,7 @@ namespace scsim {
 	double StochasticNumber::get_value_unipolar() const {
 		auto my_length = length();
 
-		if (my_length == 0) throw std::exception("get_value_unipolar: Value of an empty SN is undefined.");
+		if (my_length == 0) throw std::runtime_error("get_value_unipolar: Value of an empty SN is undefined.");
 
 		auto my_word_length = word_length();
 		auto my_data = data();
@@ -224,8 +224,8 @@ namespace scsim {
 		auto my_length = length();
 		auto my_data = data();
 
-		if (my_length == 0) throw std::exception("set_value_unipolar: SN length must be greater than zero.");
-		if (value < 0. || value > 1.) throw std::exception("set_value_unipolar: Given value is outside the encodable value range.");
+		if (my_length == 0) throw std::runtime_error("set_value_unipolar: SN length must be greater than zero.");
+		if (value < 0. || value > 1.) throw std::runtime_error("set_value_unipolar: Given value is outside the encodable value range.");
 
 		memset(my_data, 0, word_length() * sizeof(uint32_t));
 
@@ -244,7 +244,7 @@ namespace scsim {
 		auto my_length = length();
 		auto my_data = data();
 
-		if (my_length == 0) throw std::exception("set_value_constant: SN length must be greater than zero.");
+		if (my_length == 0) throw std::runtime_error("set_value_constant: SN length must be greater than zero.");
 
 		auto word_length = my_length / 32;
 		if (word_length > 0) memset(my_data, value ? 0xff : 0x00, word_length * sizeof(uint32_t));
@@ -307,7 +307,7 @@ namespace scsim {
 	double StochasticNumber::get_autocorrelation(uint32_t offset) const {
 		auto my_length = length();
 
-		if (my_length == 0) throw std::exception("get_autocorrelation: Autocorrelation of an empty SN is undefined.");
+		if (my_length == 0) throw std::runtime_error("get_autocorrelation: Autocorrelation of an empty SN is undefined.");
 
 		auto my_word_length = word_length();
 		auto my_data = data();
@@ -350,11 +350,11 @@ namespace scsim {
 
 	//see SCC metric for more information
 	double StochasticNumber::get_correlation(const StochasticNumber* x, const StochasticNumber* y) {
-		if (x->length() != y->length()) throw std::exception("get_correlation: Both numbers must have the same length.");
+		if (x->length() != y->length()) throw std::runtime_error("get_correlation: Both numbers must have the same length.");
 
 		auto length = x->length();
 		
-		if (length == 0) throw std::exception("get_correlation: Correlation of empty SNs is undefined.");
+		if (length == 0) throw std::runtime_error("get_correlation: Correlation of empty SNs is undefined.");
 
 		auto words = x->word_length();
 
@@ -435,12 +435,12 @@ namespace scsim {
 	}
 
 	void StochasticNumber::generate_bitstreams_curand(uint32_t** outputs, uint32_t length, const double* values_unipolar, size_t count) {
-		if (length == 0) throw std::exception("generate_bitstreams_curand: Length must be greater than zero.");
-		if (count == 0) throw std::exception("generate_bitstreams_curand: Count must be greater than zero.");
+		if (length == 0) throw std::runtime_error("generate_bitstreams_curand: Length must be greater than zero.");
+		if (count == 0) throw std::runtime_error("generate_bitstreams_curand: Count must be greater than zero.");
 
 		auto word_length = (length + 31) / 32;
 
-		if (count * word_length > MAX_CURAND_BATCH_WORDS) throw std::exception("generate_bitstreams_curand: Amount of data to be generated exceeds MAX_CURAND_BATCH_WORDS.");
+		if (count * word_length > MAX_CURAND_BATCH_WORDS) throw std::runtime_error("generate_bitstreams_curand: Amount of data to be generated exceeds MAX_CURAND_BATCH_WORDS.");
 
 		auto gen_length = word_length * 32; //device code only produces entire words for efficiency -> this is the true number of bits generated per number
 
@@ -483,12 +483,12 @@ namespace scsim {
 	}
 
 	void StochasticNumber::generate_bitstreams_curand(uint32_t* output, size_t output_pitch, uint32_t length, const double* values_unipolar, size_t count) {
-		if (length == 0) throw std::exception("generate_bitstreams_curand: Length must be greater than zero.");
-		if (count == 0) throw std::exception("generate_bitstreams_curand: Count must be greater than zero.");
+		if (length == 0) throw std::runtime_error("generate_bitstreams_curand: Length must be greater than zero.");
+		if (count == 0) throw std::runtime_error("generate_bitstreams_curand: Count must be greater than zero.");
 
 		auto word_length = (length + 31) / 32;
 
-		if (count * word_length > MAX_CURAND_BATCH_WORDS) throw std::exception("generate_bitstreams_curand: Amount of data to be generated exceeds MAX_CURAND_BATCH_WORDS.");
+		if (count * word_length > MAX_CURAND_BATCH_WORDS) throw std::runtime_error("generate_bitstreams_curand: Amount of data to be generated exceeds MAX_CURAND_BATCH_WORDS.");
 
 		auto outputs = (uint32_t**)malloc(count * sizeof(uint32_t*));
 		for (size_t i = 0; i < count; i++) {

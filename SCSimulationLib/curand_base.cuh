@@ -9,24 +9,24 @@
 
 namespace scsim {
 
-	class CurandError : public std::exception
+	class CurandError : public std::runtime_error
 	{
 	public:
 		const curandStatus_t error;
 
-		CurandError(curandStatus_t error, const char* file, int line) : std::exception(), error(error) {
+		CurandError(curandStatus_t error, const char* file, int line) : std::runtime_error("cuRAND Error"), error(error) {
 			char result[1024];
 			snprintf(result, 1024, "cuRAND error: %d\n  at %s, line %d", (int)error, file, line);
-			*this = std::exception(result);
+			*this = std::runtime_error(result);
 		}
 
 		virtual ~CurandError() {
 
 		}
 
-		CurandError& operator=(exception const& _Other) noexcept
+		CurandError& operator=(runtime_error const& _Other) noexcept
 		{
-			return (CurandError&)std::exception::operator=(_Other);
+			return (CurandError&)std::runtime_error::operator=(_Other);
 		}
 
 	};

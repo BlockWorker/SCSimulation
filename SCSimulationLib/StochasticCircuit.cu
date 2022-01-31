@@ -86,15 +86,15 @@ namespace scsim {
 	}
 
 	void StochasticCircuit::set_net_value(uint32_t net, StochasticNumber& value) {
-		if (net >= num_nets) throw std::exception("set_net_value: Invalid net index.");
-		if (value.length() > sim_length) throw std::exception("set_net_value: SN length exceeds the simulation time span.");
+		if (net >= num_nets) throw std::runtime_error("set_net_value: Invalid net index.");
+		if (value.length() > sim_length) throw std::runtime_error("set_net_value: SN length exceeds the simulation time span.");
 
 		net_numbers[net] = value;
 	}
 
 	void StochasticCircuit::set_net_value_unipolar(uint32_t net, double value, uint32_t length) {
-		if (net >= num_nets) throw std::exception("set_net_value_unipolar: Invalid net index.");
-		if (length > sim_length) throw std::exception("set_net_value_unipolar: Length exceeds the simulation time span.");
+		if (net >= num_nets) throw std::runtime_error("set_net_value_unipolar: Invalid net index.");
+		if (length > sim_length) throw std::runtime_error("set_net_value_unipolar: Length exceeds the simulation time span.");
 
 		net_numbers[net].set_length(length);
 		net_numbers[net].set_value_unipolar(value);
@@ -105,8 +105,8 @@ namespace scsim {
 	}
 
 	void StochasticCircuit::set_net_value_bipolar(uint32_t net, double value, uint32_t length) {
-		if (net >= num_nets) throw std::exception("set_net_value_bipolar: Invalid net index.");
-		if (length > sim_length) throw std::exception("set_net_value_bipolar: Length exceeds the simulation time span.");
+		if (net >= num_nets) throw std::runtime_error("set_net_value_bipolar: Invalid net index.");
+		if (length > sim_length) throw std::runtime_error("set_net_value_bipolar: Length exceeds the simulation time span.");
 
 		net_numbers[net].set_length(length);
 		net_numbers[net].set_value_bipolar(value);
@@ -117,15 +117,15 @@ namespace scsim {
 	}
 
 	void StochasticCircuit::set_net_values_curand(uint32_t* nets, double* values_unipolar, uint32_t count, uint32_t length) {
-		if (host_only) throw std::exception("set_net_values_curand: Cannot be used in host-only circuits.");
-		if (length == 0) throw std::exception("set_net_values_curand: Length must be greater than zero.");
-		if (length > sim_length) throw std::exception("set_net_values_curand: Length exceeds the simulation time span.");
-		if (count == 0) throw std::exception("set_net_values_curand: Count must be greater than zero.");
+		if (host_only) throw std::runtime_error("set_net_values_curand: Cannot be used in host-only circuits.");
+		if (length == 0) throw std::runtime_error("set_net_values_curand: Length must be greater than zero.");
+		if (length > sim_length) throw std::runtime_error("set_net_values_curand: Length exceeds the simulation time span.");
+		if (count == 0) throw std::runtime_error("set_net_values_curand: Count must be greater than zero.");
 
 		auto netvalue_ptrs = (uint32_t**)malloc(count * sizeof(uint32_t*)); //calculate device pointers for net data
 		for (uint32_t i = 0; i < count; i++) {
 			uint32_t net = nets[i];
-			if (net >= num_nets) throw std::exception("set_net_values_curand: Invalid net index.");
+			if (net >= num_nets) throw std::runtime_error("set_net_values_curand: Invalid net index.");
 			netvalue_ptrs[i] = (uint32_t*)((char*)net_values_dev + (net * net_values_dev_pitch));
 		}
 
@@ -155,11 +155,11 @@ namespace scsim {
 	}
 
 	void StochasticCircuit::set_net_values_curand(uint32_t first_net, double* values_unipolar, uint32_t count, uint32_t length) {
-		if (host_only) throw std::exception("set_net_values_curand: Cannot be used in host-only circuits.");
-		if (length == 0) throw std::exception("set_net_values_curand: Length must be greater than zero.");
-		if (length > sim_length) throw std::exception("set_net_values_curand: Length exceeds the simulation time span.");
-		if (count == 0) throw std::exception("set_net_values_curand: Count must be greater than zero.");
-		if (first_net + count > num_nets) throw std::exception("set_net_values_curand: Invalid first net index and/or too many nets.");
+		if (host_only) throw std::runtime_error("set_net_values_curand: Cannot be used in host-only circuits.");
+		if (length == 0) throw std::runtime_error("set_net_values_curand: Length must be greater than zero.");
+		if (length > sim_length) throw std::runtime_error("set_net_values_curand: Length exceeds the simulation time span.");
+		if (count == 0) throw std::runtime_error("set_net_values_curand: Count must be greater than zero.");
+		if (first_net + count > num_nets) throw std::runtime_error("set_net_values_curand: Invalid first net index and/or too many nets.");
 
 		auto netvalue_ptrs = (uint32_t**)malloc(count * sizeof(uint32_t*)); //calculate device pointers for net data
 		for (uint32_t i = 0; i < count; i++) {
@@ -192,8 +192,8 @@ namespace scsim {
 	}
 
 	void StochasticCircuit::set_net_value_constant(uint32_t net, bool value, uint32_t length) {
-		if (net >= num_nets) throw std::exception("set_net_value_constant: Invalid net index.");
-		if (length > sim_length) throw std::exception("set_net_value_constant: Length exceeds the simulation time span.");
+		if (net >= num_nets) throw std::runtime_error("set_net_value_constant: Invalid net index.");
+		if (length > sim_length) throw std::runtime_error("set_net_value_constant: Length exceeds the simulation time span.");
 
 		net_numbers[net].set_length(length);
 		net_numbers[net].set_value_constant(value);
@@ -286,7 +286,7 @@ namespace scsim {
 	}
 
 	void StochasticCircuit::simulate_circuit_dev_nocopy() {
-		if (host_only) throw std::exception("simulate_circuit_dev_nocopy: This function is not supported for host-only circuits.");
+		if (host_only) throw std::runtime_error("simulate_circuit_dev_nocopy: This function is not supported for host-only circuits.");
 
 		uint32_t block_size_calcp = __min(num_components, 256);
 		uint32_t num_blocks_calcp = block_size_calcp == 0 ? 0 : (num_components + block_size_calcp - 1) / block_size_calcp;
@@ -437,33 +437,33 @@ namespace scsim {
 	}
 
 	StochasticNumber& StochasticCircuit::get_net_value(uint32_t net) {
-		if (net >= num_nets) throw std::exception("get_net_value: Invalid net index.");
+		if (net >= num_nets) throw std::runtime_error("get_net_value: Invalid net index.");
 
 		return net_numbers[net];
 	}
 
 	const StochasticNumber& StochasticCircuit::get_net_value(uint32_t net) const {
-		if (net >= num_nets) throw std::exception("get_net_value: Invalid net index.");
+		if (net >= num_nets) throw std::runtime_error("get_net_value: Invalid net index.");
 
 		return net_numbers[net];
 	}
 
 	double StochasticCircuit::get_net_value_unipolar(uint32_t net) const {
-		if (net >= num_nets) throw std::exception("get_net_value_unipolar: Invalid net index.");
-		if (net_progress_host[net] == 0) throw std::exception("get_net_value_unipolar: Given net is undefined for the entire simulation time span.");
+		if (net >= num_nets) throw std::runtime_error("get_net_value_unipolar: Invalid net index.");
+		if (net_progress_host[net] == 0) throw std::runtime_error("get_net_value_unipolar: Given net is undefined for the entire simulation time span.");
 
 		return net_numbers[net].get_value_unipolar();
 	}
 
 	double StochasticCircuit::get_net_value_bipolar(uint32_t net) const {
-		if (net >= num_nets) throw std::exception("get_net_value_bipolar: Invalid net index.");
-		if (net_progress_host[net] == 0) throw std::exception("get_net_value_bipolar: Given net is undefined for the entire simulation time span.");
+		if (net >= num_nets) throw std::runtime_error("get_net_value_bipolar: Invalid net index.");
+		if (net_progress_host[net] == 0) throw std::runtime_error("get_net_value_bipolar: Given net is undefined for the entire simulation time span.");
 
 		return net_numbers[net].get_value_bipolar();
 	}
 
 	CircuitComponent* StochasticCircuit::get_component(uint32_t index) {
-		if (index >= num_components) throw std::exception("get_component: Invalid component index.");
+		if (index >= num_components) throw std::runtime_error("get_component: Invalid component index.");
 
 		return components_host[index];
 	}

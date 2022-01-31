@@ -85,8 +85,8 @@ namespace scsim {
 	}
 
 	StochasticCircuit* StochasticCircuitFactory::create_circuit() {
-		if (sim_length == 0) throw std::exception("create_circuit: Simulation time span has not been set.");
-		if (num_nets == 0 || components.size() == 0) throw std::exception("create_circuit: Factory is empty, so circuit creation is impossible.");
+		if (sim_length == 0) throw std::runtime_error("create_circuit: Simulation time span has not been set.");
+		if (num_nets == 0 || components.size() == 0) throw std::runtime_error("create_circuit: Factory is empty, so circuit creation is impossible.");
 
 		StochasticCircuit* circuit = nullptr;
 
@@ -106,7 +106,7 @@ namespace scsim {
 		net_numbers = (StochasticNumber*)calloc(num_nets, sizeof(StochasticNumber));
 
 		if (net_values_host == nullptr || net_progress_host == nullptr || components_host == nullptr || component_progress_host == nullptr ||
-			component_io_host == nullptr || component_io_offsets_host == nullptr || net_numbers == nullptr) throw std::exception("create_circuit: Host-side state allocation failed.");
+			component_io_host == nullptr || component_io_offsets_host == nullptr || net_numbers == nullptr) throw std::runtime_error("create_circuit: Host-side state allocation failed.");
 
 		size_t component_pitch;
 		size_t component_array_dev_pitch;
@@ -158,7 +158,7 @@ namespace scsim {
 
 			//component array, host side, page-locked if possible
 			component_array_host = (char*)malloc(components.size() * component_pitch);
-			if (component_array_host == nullptr) throw std::exception("create_circuit: Host-side state allocation failed.");
+			if (component_array_host == nullptr) throw std::runtime_error("create_circuit: Host-side state allocation failed.");
 			cu_ignore_error(cudaHostRegister(component_array_host, components.size() * component_pitch, cudaHostRegisterDefault));
 
 			//component array, device side
@@ -204,7 +204,7 @@ namespace scsim {
 	}
 
 	void StochasticCircuitFactory::set_sim_length(uint32_t sim_length) {
-		if (sim_length == 0) throw std::exception("set_sim_length: Simulation time span must be greater than zero.");
+		if (sim_length == 0) throw std::runtime_error("set_sim_length: Simulation time span must be greater than zero.");
 		this->sim_length = sim_length;
 	}
 
@@ -214,7 +214,7 @@ namespace scsim {
 	}
 
 	std::pair<uint32_t, uint32_t> StochasticCircuitFactory::add_nets(uint32_t count) {
-		if (count == 0) throw std::exception("add_nets: Number of added nets must be greater than zero.");
+		if (count == 0) throw std::runtime_error("add_nets: Number of added nets must be greater than zero.");
 		driven_nets.resize(driven_nets.size() + count, false); //new nets initially undriven
 		auto first = num_nets;
 		num_nets += count;
@@ -230,14 +230,14 @@ namespace scsim {
 	uint32_t StochasticCircuitFactory::add_component_internal(CircuitComponent* component) {
 		for (size_t i = 0; i < component->num_inputs; i++) {
 			//disallow invalid/nonexistent nets
-			if (component->inputs_host[i] >= num_nets) throw std::exception("add_component: Component references a net that does not exist.");
+			if (component->inputs_host[i] >= num_nets) throw std::runtime_error("add_component: Component references a net that does not exist.");
 		}
 
 		for (size_t i = 0; i < component->num_outputs; i++) {
 			auto net = component->outputs_host[i];
 			//disallow invalid/nonexistent nets and multiple outputs per net
-			if (net >= num_nets) throw std::exception("add_component: Component references a net that does not exist.");
-			if (driven_nets[net]) throw std::exception("add_component: An output net is already used as another component's output.");
+			if (net >= num_nets) throw std::runtime_error("add_component: Component references a net that does not exist.");
+			if (driven_nets[net]) throw std::runtime_error("add_component: An output net is already used as another component's output.");
 		}
 
 		for (size_t i = 0; i < component->num_outputs; i++) {

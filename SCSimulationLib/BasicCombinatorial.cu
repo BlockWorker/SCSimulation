@@ -306,7 +306,7 @@ namespace scsim {
 	MultiplexerN::MultiplexerN(std::initializer_list<uint32_t> inputs, std::initializer_list<uint32_t> selects, uint32_t output, StochasticCircuitFactory* factory) : num_mux_inputs(inputs.size()), num_selects((uint32_t)ceil(log2((double)inputs.size()))),
 		CombinatorialComponent(inputs.size() + (uint32_t)ceil(log2((double)inputs.size())), 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN), factory) {
 
-		if (selects.size() < num_selects) throw std::exception("MultiplexerN: Not enough select nets given.");
+		if (selects.size() < num_selects) throw std::runtime_error("MultiplexerN: Not enough select nets given.");
 
 		auto in = inputs.begin();
 		for (uint32_t i = 0; i < inputs.size(); i++) {
