@@ -2,7 +2,7 @@
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-#include <exception>
+#include <stdexcept>
 #include <stdio.h>
 
 //wrapper macro to detect errors in CUDA API calls
@@ -19,24 +19,24 @@
 
 namespace scsim {
 
-	class CudaError : public std::exception
+	class CudaError : public std::runtime_error
 	{
 	public:
 		const cudaError_t error;
 
-		CudaError(cudaError_t error, const char* file, int line) : std::exception(), error(error) {
+		CudaError(cudaError_t error, const char* file, int line) : std::runtime_error("CUDA Error"), error(error) {
 			char result[1024];
 			snprintf(result, 1024, "CUDA error: %s (%s)\n  at %s, line %d", cudaGetErrorString(error), cudaGetErrorName(error), file, line);
-			*this = std::exception(result);
+			*this = std::runtime_error(result);
 		}
 
 		virtual ~CudaError() {
 
 		}
 
-		CudaError& operator=(exception const& _Other) noexcept
+		CudaError& operator=(runtime_error const& _Other) noexcept
 		{
-			return (CudaError&)std::exception::operator=(_Other);
+			return (CudaError&)std::runtime_error::operator=(_Other);
 		}
 
 	};
