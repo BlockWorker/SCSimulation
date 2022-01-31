@@ -18,7 +18,11 @@
 #define cu_kernel_errcheck_nosync() cu(cudaPeekAtLastError())
 
 #ifndef __min
-	#define __min(a, b) ((a) < (b) ? (a) : (b))
+#define __min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+#ifndef __max
+#define __max(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
 namespace scsim {
