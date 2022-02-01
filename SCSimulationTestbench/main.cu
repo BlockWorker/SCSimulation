@@ -95,7 +95,7 @@ void runBench(Testbench* bench, const char* dirname, const char* filename) {
 	auto csv = bench->run();
 
 	char path[128];
-	snprintf(path, 128, "%s\\%s", dirname, filename);
+	snprintf(path, 128, "%s%c%s", dirname, std::filesystem::path::preferred_separator, filename);
 
 	std::ofstream file;
 	file.open(path);
@@ -170,7 +170,7 @@ int main() {
 		std::this_thread::sleep_for(std::chrono::seconds(5));
 
 		run(sim_max_mem);
-	} catch (std::exception e) {
+	} catch (std::runtime_error& e) {
 		std::cerr << e.what() << std::endl;
 	}
 
