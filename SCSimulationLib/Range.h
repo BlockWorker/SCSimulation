@@ -26,7 +26,7 @@ namespace scsim {
             iterator operator++(int) { iterator retval = *this; ++(*this); return retval; }
             bool operator==(iterator other) const { return num == other.num; }
             bool operator!=(iterator other) const { return !(*this == other); }
-            reference operator*() const { return (uint32_t)num; }
+            reference operator*() const { return num; }
 
         private:
 
