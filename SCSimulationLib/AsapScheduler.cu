@@ -163,7 +163,7 @@ namespace scsim {
 			uint32_t block_size_calcp = __min(info.total_count, 256);
 			node_params.blockDim = dim3(block_size_calcp);
 			node_params.gridDim = dim3((info.total_count + block_size_calcp - 1) / block_size_calcp);
-			node_params.func = &asap_calc_sim_progress;
+			node_params.func = (void*)asap_calc_sim_progress;
 
 			uint32_t* comb_indices = sim_comb_dev + info.sim_comb_offset;
 			uint32_t* seq_indices = sim_seq_dev + info.sim_seq_offset;
