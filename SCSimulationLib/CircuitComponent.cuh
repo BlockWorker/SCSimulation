@@ -13,6 +13,9 @@
 /// <returns>Index of the added component in the circuit</returns>
 #define factory_add_component(factory, Type, ...) ((factory).add_component(new Type(__VA_ARGS__, &(factory))))
 
+#define is_combinatorial(c) (((c)->component_type & 0x80000000u) == 0)
+#define is_sequential(c) (((c)->component_type & 0x80000000u) != 0)
+
 namespace scsim {
 
 	class StochasticCircuit;
@@ -24,6 +27,7 @@ namespace scsim {
 		const uint32_t component_type;
 		const uint32_t num_inputs;
 		const uint32_t num_outputs;
+		const uint32_t progress_offset; //how many bit times the outputs of this component are "ahead" of the inputs
 		uint32_t* inputs_host;
 		uint32_t* outputs_host;
 
@@ -33,7 +37,7 @@ namespace scsim {
 		/// <param name="type">Unique component type index/hash, use typehash(Type) macro in circuit_component_defines.h</param>
 		/// <param name="size">Memory size of component, use sizeof(Type)</param>
 		/// <param name="align">Memory alignment of component, use alignof(Type)</param>
-		CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size, size_t align, StochasticCircuitFactory* factory);
+		CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t progress_offset, uint32_t type, size_t size, size_t align, StochasticCircuitFactory* factory);
 
 		virtual ~CircuitComponent();
 
@@ -75,6 +79,7 @@ namespace scsim {
 		}
 
 		StochasticCircuit* get_circuit() const;
+		size_t get_index() const;
 
 		virtual void reset_state() = 0;
 
@@ -115,6 +120,8 @@ namespace scsim {
 		uint32_t* outputs_dev;
 
 		size_t io_array_offset;
+
+		size_t index;
 
 		void calculate_io_offsets(size_t* dev_offset_scratchpad);
 

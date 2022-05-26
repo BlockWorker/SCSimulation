@@ -149,11 +149,7 @@ namespace scsim {
 	public:
 		Delay(uint32_t input, uint32_t output, StochasticCircuitFactory* factory);
 
-		virtual void calculate_simulation_progress_host() override;
-
 		virtual void simulate_step_host() override;
-
-		static __device__ void _calculate_simulation_progress_dev(CircuitComponent* comp);
 
 		static __device__ void _simulate_step_dev(CircuitComponent* comp);
 

@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Components">
+      <UniqueIdentifier>{07d2724f-d9a3-4b25-84c0-b6eb439aa741}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scheduling">
+      <UniqueIdentifier>{3c31bba1-b9f3-486f-95ea-76bddb1491b2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="BasicCombinatorial.cu">
+      <Filter>Components</Filter>
+    </CudaCompile>
+    <CudaCompile Include="LFSR.cu">
+      <Filter>Components</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Stanh.cu">
+      <Filter>Components</Filter>
+    </CudaCompile>
+    <CudaCompile Include="CircuitComponent.cu" />
+    <CudaCompile Include="CombinatorialComponent.cu" />
+    <CudaCompile Include="StochasticCircuit.cu" />
+    <CudaCompile Include="StochasticCircuitFactory.cu" />
+    <CudaCompile Include="StochasticNumber.cu" />
+    <CudaCompile Include="AsapScheduler.cu">
+      <Filter>Scheduling</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BasicCombinatorial.cuh">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="LFSR.cuh">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Stanh.cuh">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph.h">
+      <Filter>Scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="CircuitComponent.cuh" />
+    <ClInclude Include="circuit_component_defines.cuh" />
+    <ClInclude Include="CombinatorialComponent.cuh" />
+    <ClInclude Include="cuda_base.cuh" />
+    <ClInclude Include="curand_base.cuh" />
+    <ClInclude Include="libpopcnt.h" />
+    <ClInclude Include="library_export.h" />
+    <ClInclude Include="Range.h" />
+    <ClInclude Include="SequentialComponent.cuh" />
+    <ClInclude Include="StochasticCircuit.cuh" />
+    <ClInclude Include="StochasticCircuitFactory.cuh" />
+    <ClInclude Include="StochasticNumber.cuh" />
+    <ClInclude Include="Scheduler.h">
+      <Filter>Scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="HostAsapScheduler.h">
+      <Filter>Scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="AsapScheduler.cuh">
+      <Filter>Scheduling</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Graph.cpp">
+      <Filter>Scheduling</Filter>
+    </ClCompile>
+    <ClCompile Include="HostAsapScheduler.cpp">
+      <Filter>Scheduling</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+  </ItemGroup>
+</Project>

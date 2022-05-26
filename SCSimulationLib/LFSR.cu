@@ -14,7 +14,7 @@
 
 namespace scsim {
 
-	LFSR::LFSR(uint32_t output, StochasticCircuitFactory* factory) : SequentialComponent(0, 1, typehash(LFSR), sizeof(LFSR), alignof(LFSR), factory) {
+	LFSR::LFSR(uint32_t output, StochasticCircuitFactory* factory) : SequentialComponent(0, 1, 0, typehash(LFSR), sizeof(LFSR), alignof(LFSR), factory) {
 		outputs_host[0] = output;
 		link_device_sim_function(LFSR);
 	}

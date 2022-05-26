@@ -64,6 +64,7 @@ namespace scsim {
 		uint32_t* net_values_dev;
 		uint32_t* net_progress_host;
 		uint32_t* net_progress_dev;
+		uint32_t* components_host_index;
 		CircuitComponent** components_host;
 		CircuitComponent** components_dev;
 		uint32_t* component_progress_host;

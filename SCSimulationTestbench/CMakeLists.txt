@@ -26,6 +26,7 @@ set(SCSIMTB_SOURCES
 add_executable(scsim-testbench ${SCSIMTB_SOURCES} ${SCSIMTB_HEADERS})
 
 target_compile_features(scsim-testbench PUBLIC cxx_std_17)
+set_target_properties(scsim-testbench PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF)
 set_target_properties(scsim-testbench PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 set_target_properties(scsim-testbench PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(scsim-testbench PROPERTIES OUTPUT_NAME "SCSimulationTestbench")

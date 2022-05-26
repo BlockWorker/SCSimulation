@@ -10,7 +10,7 @@
 
 namespace scsim {
 
-	Inverter::Inverter(uint32_t input, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(1, 1, typehash(Inverter), sizeof(Inverter), alignof(Inverter), factory) {
+	Inverter::Inverter(uint32_t input, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(1, 1, 0, typehash(Inverter), sizeof(Inverter), alignof(Inverter), factory) {
 		inputs_host[0] = input;
 		outputs_host[0] = output;
 		link_device_sim_function(Inverter);
@@ -40,7 +40,7 @@ namespace scsim {
 	}
 
 
-	AndGate::AndGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, typehash(AndGate), sizeof(AndGate), alignof(AndGate), factory) {
+	AndGate::AndGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, 0, typehash(AndGate), sizeof(AndGate), alignof(AndGate), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
@@ -73,7 +73,7 @@ namespace scsim {
 	}
 
 
-	NandGate::NandGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, typehash(NandGate), sizeof(NandGate), alignof(NandGate), factory) {
+	NandGate::NandGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, 0, typehash(NandGate), sizeof(NandGate), alignof(NandGate), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
@@ -106,7 +106,7 @@ namespace scsim {
 	}
 
 
-	OrGate::OrGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, typehash(OrGate), sizeof(OrGate), alignof(OrGate), factory) {
+	OrGate::OrGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, 0, typehash(OrGate), sizeof(OrGate), alignof(OrGate), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
@@ -139,7 +139,7 @@ namespace scsim {
 	}
 
 
-	NorGate::NorGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, typehash(NorGate), sizeof(NorGate), alignof(NorGate), factory) {
+	NorGate::NorGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, 0, typehash(NorGate), sizeof(NorGate), alignof(NorGate), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
@@ -172,7 +172,7 @@ namespace scsim {
 	}
 
 
-	XorGate::XorGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, typehash(XorGate), sizeof(XorGate), alignof(XorGate), factory) {
+	XorGate::XorGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, 0, typehash(XorGate), sizeof(XorGate), alignof(XorGate), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
@@ -205,7 +205,7 @@ namespace scsim {
 	}
 
 
-	XnorGate::XnorGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, typehash(XnorGate), sizeof(XnorGate), alignof(XnorGate), factory) {
+	XnorGate::XnorGate(uint32_t input1, uint32_t input2, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(2, 1, 0, typehash(XnorGate), sizeof(XnorGate), alignof(XnorGate), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		outputs_host[0] = output;
@@ -238,7 +238,7 @@ namespace scsim {
 	}
 
 
-	Multiplexer2::Multiplexer2(uint32_t input1, uint32_t input2, uint32_t select, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(3, 1, typehash(Multiplexer2), sizeof(Multiplexer2), alignof(Multiplexer2), factory) {
+	Multiplexer2::Multiplexer2(uint32_t input1, uint32_t input2, uint32_t select, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(3, 1, 0, typehash(Multiplexer2), sizeof(Multiplexer2), alignof(Multiplexer2), factory) {
 		inputs_host[0] = input1;
 		inputs_host[1] = input2;
 		inputs_host[2] = select;
@@ -277,7 +277,7 @@ namespace scsim {
 
 
 	MultiplexerN::MultiplexerN(uint32_t _num_inputs, uint32_t* inputs, uint32_t* selects, uint32_t output, StochasticCircuitFactory* factory) : num_mux_inputs(_num_inputs), num_selects((uint32_t)ceil(log2((double)_num_inputs))),
-		CombinatorialComponent(_num_inputs + (uint32_t)ceil(log2((double)_num_inputs)), 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN), factory) {
+		CombinatorialComponent(_num_inputs + (uint32_t)ceil(log2((double)_num_inputs)), 1, 0, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN), factory) {
 
 		memcpy(this->inputs_host, inputs, _num_inputs * sizeof(uint32_t));
 		memcpy((this->inputs_host + _num_inputs), selects, num_selects * sizeof(uint32_t));
@@ -288,7 +288,7 @@ namespace scsim {
 	}
 
 	MultiplexerN::MultiplexerN(uint32_t _num_inputs, uint32_t first_input, uint32_t first_select, uint32_t output, StochasticCircuitFactory* factory) : num_mux_inputs(_num_inputs), num_selects((uint32_t)ceil(log2((double)_num_inputs))),
-		CombinatorialComponent(_num_inputs + (uint32_t)ceil(log2((double)_num_inputs)), 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN), factory) {
+		CombinatorialComponent(_num_inputs + (uint32_t)ceil(log2((double)_num_inputs)), 1, 0, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN), factory) {
 
 		for (uint32_t i = 0; i < _num_inputs; i++) {
 			this->inputs_host[i] = first_input + i;
@@ -304,7 +304,7 @@ namespace scsim {
 	}
 
 	MultiplexerN::MultiplexerN(std::initializer_list<uint32_t> inputs, std::initializer_list<uint32_t> selects, uint32_t output, StochasticCircuitFactory* factory) : num_mux_inputs(inputs.size()), num_selects((uint32_t)ceil(log2((double)inputs.size()))),
-		CombinatorialComponent(inputs.size() + (uint32_t)ceil(log2((double)inputs.size())), 1, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN), factory) {
+		CombinatorialComponent(inputs.size() + (uint32_t)ceil(log2((double)inputs.size())), 1, 0, typehash(MultiplexerN), sizeof(MultiplexerN), alignof(MultiplexerN), factory) {
 
 		if (selects.size() < num_selects) throw std::runtime_error("MultiplexerN: Not enough select nets given.");
 
@@ -365,38 +365,13 @@ namespace scsim {
 	}
 
 
-	Delay::Delay(uint32_t input, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(1, 1, typehash(Delay), sizeof(Delay), alignof(Delay), factory) {
+	Delay::Delay(uint32_t input, uint32_t output, StochasticCircuitFactory* factory) : CombinatorialComponent(1, 1, 1, typehash(Delay), sizeof(Delay), alignof(Delay), factory) {
 		inputs_host[0] = input;
 		outputs_host[0] = output;
-		link_device_sim_progress_functions(Delay);
+		link_device_sim_function(Delay);
 	}
 
 	def_device_statics(Delay)
-
-	void Delay::calculate_simulation_progress_host() {
-		uint32_t current_progress = circuit->sim_length;
-		for (uint32_t i = 0; i < num_outputs; i++) {
-			auto out_progress = circuit->net_progress_host[outputs_host[i]];
-			if (out_progress < current_progress) { //current progress equals the minimum progress of output nets
-				current_progress = out_progress;
-			}
-		}
-
-		uint32_t next_step_progress = circuit->sim_length;
-		for (uint32_t i = 0; i < num_inputs; i++) {
-			auto in_progress = circuit->net_progress_host[inputs_host[i]];
-			if (in_progress + 1 < next_step_progress) { //next step progress equals the minimum progress of input nets + 1 (delay can progress one step further)
-				next_step_progress = in_progress + 1;
-			}
-		}
-
-		if (next_step_progress < current_progress) {
-			next_step_progress = current_progress;
-		}
-
-		*current_progress_host_ptr = current_progress;
-		*next_step_progress_host_ptr = next_step_progress;
-	}
 
 	void Delay::simulate_step_host() {
 		auto out_offset = output_offsets_host[0];
@@ -410,32 +385,6 @@ namespace scsim {
 			circuit->net_values_host[out_offset + i] = (curr_word >> 1) | (prev_word << 31);
 			prev_word = curr_word;
 		}
-	}
-
-	__device__ void Delay::_calculate_simulation_progress_dev(CircuitComponent* comp) {
-		auto g = (Delay*)comp;
-		uint32_t current_progress = g->sim_length;
-		for (uint32_t i = 0; i < g->num_outputs; i++) {
-			auto out_progress = g->net_progress_dev[g->outputs_dev[i]];
-			if (out_progress < current_progress) { //current progress equals the minimum progress of output nets
-				current_progress = out_progress;
-			}
-		}
-
-		uint32_t next_step_progress = g->sim_length;
-		for (uint32_t i = 0; i < g->num_inputs; i++) {
-			auto in_progress = g->net_progress_dev[g->inputs_dev[i]];
-			if (in_progress + 1 < next_step_progress) { //next step progress equals the minimum progress of input nets
-				next_step_progress = in_progress + 1;
-			}
-		}
-
-		if (next_step_progress < current_progress) {
-			next_step_progress = current_progress;
-		}
-
-		*g->current_progress_dev_ptr = current_progress;
-		*g->next_step_progress_dev_ptr = next_step_progress;
 	}
 
 	__device__ void Delay::_simulate_step_dev(CircuitComponent* comp) {

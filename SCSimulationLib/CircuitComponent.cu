@@ -11,8 +11,8 @@ namespace scsim {
 		*func_pointer = &scsim::CircuitComponent::_calculate_simulation_progress_dev;
 	}
 
-	CircuitComponent::CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t type, size_t size, size_t align, StochasticCircuitFactory* factory) : component_type(type),
-		mem_obj_size(size), mem_align(align), num_inputs(num_inputs), num_outputs(num_outputs) {
+	CircuitComponent::CircuitComponent(uint32_t num_inputs, uint32_t num_outputs, uint32_t progress_offset, uint32_t type, size_t size, size_t align, StochasticCircuitFactory* factory)
+		: component_type(type), mem_obj_size(size), mem_align(align), num_inputs(num_inputs), num_outputs(num_outputs), progress_offset(progress_offset) {
 		circuit = nullptr;
 		net_values_dev = nullptr;
 		net_progress_dev = nullptr;
@@ -33,6 +33,8 @@ namespace scsim {
 		outputs_dev = nullptr;
 		input_offsets_dev = nullptr;
 		output_offsets_dev = nullptr;
+
+		index = (size_t)(-1);
 
 		if (!_dev_link_initialized && !factory->host_only) { //link default device-side progress calculation function
 			_dev_link_initialized = true;
@@ -58,19 +60,23 @@ namespace scsim {
 		return circuit;
 	}
 
+	size_t CircuitComponent::get_index() const {
+		return index;
+	}
+
 	void CircuitComponent::calculate_simulation_progress_host() {
 		uint32_t current_progress = circuit->sim_length;
-		for (uint32_t i = 0; i < num_outputs; i++) {
+		for (uint32_t i = 0; i < num_outputs; i++) { //current progress equals the minimum progress of output nets
 			auto out_progress = circuit->net_progress_host[outputs_host[i]];
-			if (out_progress < current_progress) { //current progress equals the minimum progress of output nets
+			if (out_progress < current_progress) {
 				current_progress = out_progress;
 			}
 		}
 
 		uint32_t next_step_progress = circuit->sim_length;
-		for (uint32_t i = 0; i < num_inputs; i++) {
-			auto in_progress = circuit->net_progress_host[inputs_host[i]];
-			if (in_progress < next_step_progress) { //next step progress equals the minimum progress of input nets
+		for (uint32_t i = 0; i < num_inputs; i++) { //next step progress equals the minimum progress of input nets, plus offset
+			auto in_progress = circuit->net_progress_host[inputs_host[i]] + progress_offset;
+			if (in_progress < next_step_progress) {
 				next_step_progress = in_progress;
 			}
 		}
@@ -128,17 +134,17 @@ namespace scsim {
 
 	__device__ void CircuitComponent::_calculate_simulation_progress_dev(CircuitComponent* comp) {
 		uint32_t current_progress = comp->sim_length;
-		for (uint32_t i = 0; i < comp->num_outputs; i++) {
+		for (uint32_t i = 0; i < comp->num_outputs; i++) { //current progress equals the minimum progress of output nets
 			auto out_progress = comp->net_progress_dev[comp->outputs_dev[i]];
-			if (out_progress < current_progress) { //current progress equals the minimum progress of output nets
+			if (out_progress < current_progress) {
 				current_progress = out_progress;
 			}
 		}
 
 		uint32_t next_step_progress = comp->sim_length;
-		for (uint32_t i = 0; i < comp->num_inputs; i++) {
-			auto in_progress = comp->net_progress_dev[comp->inputs_dev[i]];
-			if (in_progress < next_step_progress) { //next step progress equals the minimum progress of input nets
+		for (uint32_t i = 0; i < comp->num_inputs; i++) { //next step progress equals the minimum progress of input nets, plus offset
+			auto in_progress = comp->net_progress_dev[comp->inputs_dev[i]] + comp->progress_offset;
+			if (in_progress < next_step_progress) {
 				next_step_progress = in_progress;
 			}
 		}

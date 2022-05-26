@@ -6,31 +6,34 @@
 #include "StochasticCircuit.cuh"
 #include "CircuitComponent.cuh"
 #include "StochasticNumber.cuh"
+#include "Scheduler.h"
 
 namespace scsim {
 
-	StochasticCircuit::StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values, uint32_t* net_progress, uint32_t num_components_comb, uint32_t num_components_seq,
+	StochasticCircuit::StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values, uint32_t* net_progress, uint32_t num_components_comb, uint32_t num_components_seq, uint32_t* components_index,
 		CircuitComponent** components, uint32_t* component_progress, uint32_t num_component_types, uint32_t* component_io, size_t* component_io_offsets, StochasticNumber* net_numbers) :
 		host_only(true), sim_length(sim_length), sim_length_words((sim_length + 31) / 32), num_nets(num_nets), net_values_host(net_values), net_values_host_pitch((sim_length + 31) / 32 * sizeof(uint32_t)),
 		net_values_dev(nullptr), net_values_dev_pitch(0), net_progress_host(net_progress), net_progress_dev(nullptr), num_components_comb(num_components_comb), num_components_seq(num_components_seq),
-		num_components(num_components_comb + num_components_seq), components_host(components), components_dev(nullptr), component_array_host(nullptr), component_array_host_pitch(0),
+		num_components(num_components_comb + num_components_seq), components_host_index(components_index), components_host(components), components_dev(nullptr), component_array_host(nullptr), component_array_host_pitch(0),
 		component_array_dev(nullptr), component_array_dev_pitch(0), component_progress_host(component_progress), component_progress_dev(nullptr), num_component_types(num_component_types),
 		component_io_host(component_io), component_io_dev(nullptr), component_io_offsets_host(component_io_offsets), component_io_offsets_dev(nullptr), net_numbers(net_numbers) {
 
+		scheduler = nullptr;
 	}
 
 	StochasticCircuit::StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values_host, uint32_t* net_values_dev, size_t net_values_dev_pitch, uint32_t* net_progress_host, uint32_t* net_progress_dev,
-		uint32_t num_components_comb, uint32_t num_components_seq, CircuitComponent** components_host, CircuitComponent** components_dev, char* component_array_host, size_t component_array_host_pitch,
+		uint32_t num_components_comb, uint32_t num_components_seq, uint32_t* components_host_index, CircuitComponent** components_host, CircuitComponent** components_dev, char* component_array_host, size_t component_array_host_pitch,
 		char* component_array_dev, size_t component_array_dev_pitch, uint32_t* component_progress_host, uint32_t* component_progress_dev, uint32_t num_component_types, uint32_t* component_io_host,
 		uint32_t* component_io_dev, size_t* component_io_offsets_host, size_t* component_io_offsets_dev, StochasticNumber* net_numbers) :
 		host_only(false), sim_length(sim_length), sim_length_words((sim_length + 31) / 32), num_nets(num_nets), net_values_host(net_values_host),
 		net_values_host_pitch((sim_length + 31) / 32 * sizeof(uint32_t)), net_values_dev(net_values_dev), net_values_dev_pitch(net_values_dev_pitch), net_progress_host(net_progress_host),
 		net_progress_dev(net_progress_dev), num_components_comb(num_components_comb), num_components_seq(num_components_seq), num_components(num_components_comb + num_components_seq),
-		components_host(components_host), components_dev(components_dev), component_array_host(component_array_host), component_array_host_pitch(component_array_host_pitch),
+		components_host_index(components_host_index), components_host(components_host), components_dev(components_dev), component_array_host(component_array_host), component_array_host_pitch(component_array_host_pitch),
 		component_array_dev(component_array_dev), component_array_dev_pitch(component_array_dev_pitch), component_progress_host(component_progress_host),
 		component_progress_dev(component_progress_dev), num_component_types(num_component_types), component_io_host(component_io_host), component_io_dev(component_io_dev),
 		component_io_offsets_host(component_io_offsets_host), component_io_offsets_dev(component_io_offsets_dev), net_numbers(net_numbers) {
 
+		scheduler = nullptr;
 	}
 
 	StochasticCircuit::~StochasticCircuit() {
@@ -73,6 +76,8 @@ namespace scsim {
 		free(component_io_host);
 		free(component_io_offsets_host);
 		free(net_numbers);
+
+		delete scheduler;
 	}
 
 	void StochasticCircuit::reset_circuit() {
@@ -234,6 +239,8 @@ namespace scsim {
 	}
 
 	void StochasticCircuit::simulate_circuit_host_only() {
+		if (scheduler != nullptr && scheduler->execute(true)) return; //use scheduler if applicable
+
 		std::vector<uint32_t> last_round_possible_progress(num_components, 0);
 
 		while (!simulation_finished) { //iterate over all components until simulation is finished
@@ -287,6 +294,8 @@ namespace scsim {
 
 	void StochasticCircuit::simulate_circuit_dev_nocopy() {
 		if (host_only) throw std::runtime_error("simulate_circuit_dev_nocopy: This function is not supported for host-only circuits.");
+
+		if (scheduler != nullptr && scheduler->execute(false)) return; //use scheduler if applicable
 
 		uint32_t block_size_calcp = __min(num_components, 256);
 		uint32_t num_blocks_calcp = block_size_calcp == 0 ? 0 : (num_components + block_size_calcp - 1) / block_size_calcp;
@@ -465,11 +474,23 @@ namespace scsim {
 	CircuitComponent* StochasticCircuit::get_component(uint32_t index) {
 		if (index >= num_components) throw std::runtime_error("get_component: Invalid component index.");
 
-		return components_host[index];
+		return components_host[components_host_index[index]];
 	}
 
 	void StochasticCircuit::copy_component_progress_from_device() {
 		cu(cudaMemcpy(component_progress_host, component_progress_dev, 2 * num_components * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+	}
+
+	void StochasticCircuit::set_scheduler(Scheduler* scheduler) {
+		if (scheduler != nullptr && scheduler->is_compiled()) throw std::runtime_error("set_scheduler: Already compiled schedulers cannot be assigned to a circuit.");
+
+		scheduler->compile(this);
+		delete this->scheduler;
+		this->scheduler = scheduler;
+	}
+
+	const Scheduler* StochasticCircuit::get_scheduler() {
+		return scheduler;
 	}
 
 }

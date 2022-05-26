@@ -15,6 +15,8 @@
 #include "MLPLayerSizeTestbench.cuh"
 #include "CycleTestbench.cuh"
 
+//#include "Graph.h"
+
 constexpr uint32_t SIM_RUNS = 5;
 
 constexpr uint32_t MIN_SN_LENGTH_MLP = 1 << 8;
@@ -124,7 +126,7 @@ void run(uint64_t max_mem) {
 
 		std::filesystem::create_directory(dir);
 
-		//*
+		/*
 		sim_bitwise = true;
 		std::cout << "**** Running bitwise inverter testbench ****" << std::endl;
 		runBench(new InverterTestbench(MIN_SN_LENGTH, max_setups_1c2n, 10), dir, "inverter_bitwise.csv");
@@ -151,7 +153,7 @@ void run(uint64_t max_mem) {
 		runBench(new ChainedInverterTestbench(MIN_SN_LENGTH, 13, 10), dir, "chained_inverter.csv");
 		//*/
 	}
-	//*
+	/*
 	std::cout << "**** Running cycle testbench ****" << std::endl;
 	runBench(new CycleTestbench(MIN_SN_LENGTH, max_setups_2c2n - 1, 7), "results0", "cycle.csv");
 	//*/
@@ -159,6 +161,7 @@ void run(uint64_t max_mem) {
 }
 
 int main() {
+	//*
 	try {
 		cu(cudaSetDevice(0));
 		cudaDeviceProp prop;
@@ -173,6 +176,52 @@ int main() {
 	} catch (std::runtime_error& e) {
 		std::cerr << e.what() << std::endl;
 	}
+	/*/
+	scsim::Graph g(7);
+	g.add_edge(4, 1);
+	g.add_edge(4, 3);
+	g.add_edge(1, 2);
+	g.add_edge(3, 2);
+	g.add_edge(2, 0);
+	g.add_edge(6, 0);
+	g.add_edge(5, 3);
+	g.add_edge(5, 2);
+	g.add_edge(1, 3);
+
+	std::vector<uint32_t> topsort1;
+	auto res1 = g.topological_sort(topsort1);
+
+	std::vector<int64_t> sssp_distances;
+	std::vector<int64_t> sslp_distances;
+	g.topological_sssp(topsort1, -1, sssp_distances);
+	g.topological_sslp(topsort1, -1, sslp_distances);
+
+	std::vector<int64_t> sdsp_distances;
+	std::vector<int64_t> sdlp_distances;
+	g.topological_sdsp(topsort1, -1, sdsp_distances);
+	g.topological_sdlp(topsort1, -1, sdlp_distances);
+
+	std::cout << "First: " << res1 << std::endl;
+	std::cout << "Order: ";
+	for each (auto v in topsort1) std::cout << v << ", ";
+	std::cout << std::endl << std::endl;
+
+	std::cout << "SSSP distances: ";
+	for each (auto d in sssp_distances) std::cout << d << ", ";
+	std::cout << std::endl << std::endl;
+
+	std::cout << "SSLP distances: ";
+	for each (auto d in sslp_distances) std::cout << d << ", ";
+	std::cout << std::endl << std::endl;
+
+	std::cout << "SDSP distances: ";
+	for each (auto d in sdsp_distances) std::cout << d << ", ";
+	std::cout << std::endl << std::endl;
+
+	std::cout << "SDLP distances: ";
+	for each (auto d in sdlp_distances) std::cout << d << ", ";
+	std::cout << std::endl << std::endl;
+	//*/
 
 	std::cout << "Press return to exit...";
 	std::cin.get();

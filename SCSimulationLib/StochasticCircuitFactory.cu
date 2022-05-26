@@ -1,6 +1,7 @@
 ﻿#include "cuda_base.cuh"
 
 #include <algorithm>
+#include <numeric>
 
 #include "StochasticCircuitFactory.cuh"
 #include "StochasticCircuit.cuh"
@@ -95,6 +96,7 @@ namespace scsim {
 		//host-side circuit state
 		net_values_host = (uint32_t*)malloc(sim_length_words * num_nets * sizeof(uint32_t));
 		net_progress_host = (uint32_t*)calloc(num_nets, sizeof(uint32_t));
+		components_host_index = (uint32_t*)malloc(components.size() * sizeof(uint32_t));
 		components_host = (CircuitComponent**)malloc(components.size() * sizeof(CircuitComponent*));
 		components_dev = nullptr;
 		component_progress_host = (uint32_t*)calloc(2 * components.size(), sizeof(uint32_t));
@@ -111,8 +113,17 @@ namespace scsim {
 		size_t component_pitch;
 		size_t component_array_dev_pitch;
 
-		std::stable_sort(components.begin(), components.end(), [](auto a, auto b) { return a->component_type < b->component_type; }); //sort components by type for automatic grouping during simulation
-		memcpy(components_host, components.data(), components.size() * sizeof(CircuitComponent*));
+		//sort components by type for automatic grouping during simulation
+		std::vector<uint32_t> sort_indices(components.size());
+		std::iota(sort_indices.begin(), sort_indices.end(), 0);
+		std::stable_sort(sort_indices.begin(), sort_indices.end(), [&](auto a, auto b) { return components[a]->component_type < components[b]->component_type; });
+
+		for (uint32_t i = 0; i < components.size(); i++) {
+			auto sort_index = sort_indices[i];
+			components_host[i] = components[sort_index];
+			components_host_index[sort_index] = i;
+		}
+
 		memcpy(component_io_host, component_io.data(), component_io.size() * sizeof(uint32_t));
 
 		uint32_t num_component_types = 0;
@@ -130,8 +141,8 @@ namespace scsim {
 		}
 
 		if (host_only) { //host-only circuit: create circuit and initialize components, that's all
-			circuit = new StochasticCircuit(sim_length, num_nets, net_values_host, net_progress_host, num_comb_comp, num_seq_comp, components_host, component_progress_host, num_component_types,
-				component_io_host, component_io_offsets_host, net_numbers);
+			circuit = new StochasticCircuit(sim_length, num_nets, net_values_host, net_progress_host, num_comb_comp, num_seq_comp, components_host_index, components_host, component_progress_host,
+				num_component_types, component_io_host, component_io_offsets_host, net_numbers);
 			for (uint32_t i = 0; i < components.size(); i++) {
 				components_host[i]->init_with_circuit(circuit, component_progress_host + (2ull * i), nullptr, nullptr);
 			}
@@ -164,9 +175,9 @@ namespace scsim {
 			//component array, device side
 			cu(cudaMallocPitch(&component_array_dev, &component_array_dev_pitch, component_pitch, components.size()));
 
-			circuit = new StochasticCircuit(sim_length, num_nets, net_values_host, net_values_dev, net_pitch_dev, net_progress_host, net_progress_dev, num_comb_comp, num_seq_comp, components_host,
-				components_dev, component_array_host, component_pitch, component_array_dev, component_array_dev_pitch, component_progress_host, component_progress_dev, num_component_types,
-				component_io_host, component_io_dev, component_io_offsets_host, component_io_offsets_dev, net_numbers);
+			circuit = new StochasticCircuit(sim_length, num_nets, net_values_host, net_values_dev, net_pitch_dev, net_progress_host, net_progress_dev, num_comb_comp, num_seq_comp,
+				components_host_index, components_host, components_dev, component_array_host, component_pitch, component_array_dev, component_array_dev_pitch, component_progress_host,
+				component_progress_dev,	num_component_types, component_io_host, component_io_dev, component_io_offsets_host, component_io_offsets_dev, net_numbers);
 
 			cu(cudaMallocHost(&dev_offset_scratchpad, component_io.size() * sizeof(size_t)));
 			cu(cudaMallocHost(&dev_pointers_scratchpad, components.size() * sizeof(CircuitComponent*)));
@@ -228,6 +239,8 @@ namespace scsim {
 	}
 
 	uint32_t StochasticCircuitFactory::add_component_internal(CircuitComponent* component) {
+		size_t index = components.size();
+
 		for (size_t i = 0; i < component->num_inputs; i++) {
 			//disallow invalid/nonexistent nets
 			if (component->inputs_host[i] >= num_nets) throw std::runtime_error("add_component: Component references a net that does not exist.");
@@ -249,9 +262,11 @@ namespace scsim {
 		if (component->mem_obj_size > max_component_size) max_component_size = component->mem_obj_size;
 		if (component->mem_align > max_component_align) max_component_align = component->mem_align;
 
+		component->index = index;
+
 		components.push_back(component);
 
-		return components.size() - 1;
+		return index;
 	}
 
 }

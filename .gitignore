@@ -1,3 +1,9 @@
 build/
 WorkDir/
 results*/
+*.sln
+*.vcxproj
+*.user
+library_export.h
+*x64/
+*.vs/

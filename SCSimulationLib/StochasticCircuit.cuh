@@ -8,6 +8,7 @@ namespace scsim {
 	class CircuitComponent;
 	class StochasticNumber;
 	class StochasticCircuitFactory;
+	class Scheduler;
 
 	class SCSIMAPI StochasticCircuit
 	{
@@ -28,8 +29,10 @@ namespace scsim {
 		const uint32_t num_components;
 		const uint32_t num_components_comb;
 		const uint32_t num_components_seq;
+		uint32_t* const components_host_index;
 		CircuitComponent** const components_host;
 		CircuitComponent** const components_dev;
+		const uint32_t num_component_types;
 
 		StochasticNumber* const net_numbers;
 
@@ -134,6 +137,13 @@ namespace scsim {
 		/// <returns>Pointer to the component object with the given index in the circuit.</returns>
 		CircuitComponent* get_component(uint32_t index);
 
+		/// <summary>
+		/// Makes this circuit use the given scheduler for simulation scheduling.
+		/// </summary>
+		/// <param name="scheduler">Scheduler to use. Must not be compiled yet. To use dynamic scheduling (default), set this to nullptr.</param>
+		void set_scheduler(Scheduler* scheduler);
+		const Scheduler* get_scheduler();
+
 	private:
 		friend StochasticCircuitFactory;
 		friend CircuitComponent;
@@ -146,21 +156,22 @@ namespace scsim {
 		const size_t component_array_dev_pitch;
 		uint32_t* const component_progress_host;
 		uint32_t* const component_progress_dev;
-		const uint32_t num_component_types;
 		uint32_t* const component_io_host;
 		uint32_t* const component_io_dev;
 		size_t* const component_io_offsets_host;
 		size_t* const component_io_offsets_dev;
 
+		Scheduler* scheduler;
+
 		//host-only circuit constructor
-		StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values, uint32_t* net_progress, uint32_t num_components_comb, uint32_t num_components_seq, CircuitComponent** components,
-			uint32_t* component_progress, uint32_t num_component_types, uint32_t* component_io, size_t* component_io_offsets, StochasticNumber* net_numbers);
+		StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values, uint32_t* net_progress, uint32_t num_components_comb, uint32_t num_components_seq, uint32_t* components_index,
+			CircuitComponent** components, uint32_t* component_progress, uint32_t num_component_types, uint32_t* component_io, size_t* component_io_offsets, StochasticNumber* net_numbers);
 
 		//device-accelerated circuit constructor
 		StochasticCircuit(uint32_t sim_length, uint32_t num_nets, uint32_t* net_values_host, uint32_t* net_values_dev, size_t net_values_dev_pitch, uint32_t* net_progress_host, uint32_t* net_progress_dev,
-			uint32_t num_components_comb, uint32_t num_components_seq, CircuitComponent** components_host, CircuitComponent** components_dev, char* component_array_host, size_t component_array_host_pitch,
-			char* component_array_dev, size_t component_array_dev_pitch, uint32_t* component_progress_host, uint32_t* component_progress_dev, uint32_t num_component_types, uint32_t* component_io_host,
-			uint32_t* component_io_dev, size_t* component_io_offsets_host, size_t* component_io_offsets_dev, StochasticNumber* net_numbers);
+			uint32_t num_components_comb, uint32_t num_components_seq, uint32_t* components_host_index, CircuitComponent** components_host, CircuitComponent** components_dev, char* component_array_host,
+			size_t component_array_host_pitch, char* component_array_dev, size_t component_array_dev_pitch, uint32_t* component_progress_host, uint32_t* component_progress_dev, uint32_t num_component_types,
+			uint32_t* component_io_host, uint32_t* component_io_dev, size_t* component_io_offsets_host, size_t* component_io_offsets_dev, StochasticNumber* net_numbers);
 
 		void copy_component_progress_from_device();
 

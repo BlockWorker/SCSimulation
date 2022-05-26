@@ -21,6 +21,19 @@ set (SCSIMLIB_COMPONENT_SOURCES
   Stanh.cu
 )
 
+set (SCSIMLIB_SCHEDULING_HEADERS
+  Graph.h
+  Scheduler.h
+  HostAsapScheduler.h
+  AsapScheduler.cuh
+)
+
+set (SCSIMLIB_SCHEDULING_SOURCES
+  Graph.cpp
+  HostAsapScheduler.cpp
+  AsapScheduler.cu
+)
+
 set(SCSIMLIB_PUBLIC_HEADERS
   circuit_component_defines.cuh
   CircuitComponent.cuh
@@ -49,12 +62,15 @@ set(SCSIMLIB_MAIN_SOURCES
 add_library(scsim-lib SHARED
   ${SCSIMLIB_MAIN_SOURCES}
   ${SCSIMLIB_COMPONENT_SOURCES}
+  ${SCSIMLIB_SCHEDULING_SOURCES}
   ${SCSIMLIB_PUBLIC_HEADERS}
   ${SCSIMLIB_PRIVATE_HEADERS}
   ${SCSIMLIB_COMPONENT_HEADERS}
+  ${SCSIMLIB_SCHEDULING_HEADERS}
 )
 
 target_compile_features(scsim-lib PUBLIC cxx_std_17)
+set_target_properties(scsim-lib PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF)
 set_target_properties(scsim-lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 set_target_properties(scsim-lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(scsim-lib PROPERTIES OUTPUT_NAME "SCSimulation")
@@ -84,8 +100,11 @@ if (MSVC)
 endif()
 
 source_group("Header Files" FILES ${SCSIMLIB_PUBLIC_HEADERS} ${SCSIMLIB_PRIVATE_HEADERS})
+source_group("Source Files" FILES ${SCSIMLIB_MAIN_SOURCES})
 source_group("Header Files/Components" FILES ${SCSIMLIB_COMPONENT_HEADERS})
+source_group("Header Files/Scheduling" FILES ${SCSIMLIB_SCHEDULING_HEADERS})
 source_group("Source Files/Components" FILES ${SCSIMLIB_COMPONENT_SOURCES})
+source_group("Source Files/Scheduling" FILES ${SCSIMLIB_SCHEDULING_SOURCES})
 
 install(TARGETS scsim-lib
   RUNTIME DESTINATION bin
