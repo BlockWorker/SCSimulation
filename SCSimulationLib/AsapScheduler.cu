@@ -204,7 +204,7 @@ namespace scsim {
 				//grid size x and y: component/word count split into multiple blocks
 				//grid size z: component types
 				node_params.gridDim = dim3((info.comb_type_max_count + block_size_x - 1) / block_size_x, grid_size_y, info.number_comb_types);
-				node_params.func = &exec_sim_step;
+				node_params.func = (void*)exec_sim_step;
 
 				uint32_t* counts = comb_type_counts_dev + info.comb_type_counts_offset;
 				uint32_t* offsets = comb_type_offsets_dev + info.comb_type_offsets_offset;
@@ -219,7 +219,7 @@ namespace scsim {
 				uint32_t block_size_fin = __min(info.combinatorial_count, 256);
 				node_params.blockDim = dim3(block_size_fin);
 				node_params.gridDim = dim3((info.combinatorial_count + block_size_fin - 1) / block_size_fin);
-				node_params.func = &finish_sim_step;
+				node_params.func = (void*)finish_sim_step;
 
 				param_pointers[0] = (void*)&circuit->components_dev;
 				param_pointers[1] = (void*)&comb_indices;
@@ -238,7 +238,7 @@ namespace scsim {
 				//grid size x: component count split into multiple blocks
 				//grid size z: component types
 				node_params.gridDim = dim3((info.seq_type_max_count + block_size_x - 1) / block_size_x, 1, info.number_seq_types);
-				node_params.func = &exec_sim_step;
+				node_params.func = (void*)exec_sim_step;
 
 				uint32_t* counts = seq_type_counts_dev + info.seq_type_counts_offset;
 				uint32_t* offsets = seq_type_offsets_dev + info.seq_type_offsets_offset;
@@ -253,7 +253,7 @@ namespace scsim {
 				uint32_t block_size_fin = __min(sequential_count, 256);
 				node_params.blockDim = dim3(block_size_fin);
 				node_params.gridDim = dim3((sequential_count + block_size_fin - 1) / block_size_fin);
-				node_params.func = &finish_sim_step;
+				node_params.func = (void*)finish_sim_step;
 
 				param_pointers[0] = (void*)&circuit->components_dev;
 				param_pointers[1] = (void*)&seq_indices;
