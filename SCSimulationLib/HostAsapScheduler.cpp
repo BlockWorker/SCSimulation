@@ -35,7 +35,7 @@ namespace scsim {
 			auto comp = circuit->components_host[i]; //get component i
 			for (uint32_t j = 0; j < comp->num_outputs; j++) { //for each output net: add children of output net as children of component i
 				auto& output_children = net_children[comp->outputs_host[j]];
-				for each (uint32_t child in output_children) {
+				for (uint32_t child : output_children) {
 					graph->add_edge(i, child);
 				}
 			}
@@ -75,8 +75,8 @@ namespace scsim {
 	bool HostAsapScheduler::execute(bool host) {
 		if (!host || !is_compiled()) return false; //execution only possible on the host, and if compiled
 
-		for each (auto& bucket in schedule_buckets) {
-			for each (auto index in bucket) {
+		for (auto& bucket : schedule_buckets) {
+			for (auto index : bucket) {
 				auto comp = circuit->components_host[index];
 				comp->calculate_simulation_progress_host();
 				comp->simulate_step_host();

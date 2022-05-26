@@ -73,14 +73,14 @@ namespace scsim {
 
 		std::vector<bucket_info_t> bucket_info;
 
-		for each (auto bucket in host_scheduler->schedule_buckets) { //process buckets, first round: generate kernel data structures
+		for (auto bucket : host_scheduler->schedule_buckets) { //process buckets, first round: generate kernel data structures
 			//add bucket info with offsets in corresponding vectors, and initial 0 combinatorial count
 			bucket_info.push_back({ sim_comb.size(), comb_type_counts.size(), comb_type_offsets.size(), sim_seq.size(), seq_type_counts.size(), seq_type_offsets.size(), 0, bucket.size(), 0, 0, 0, 0 });
 			auto& info = bucket_info.back();
 
 			uint32_t last_type = 0;
 
-			for each (auto index in bucket) { //process all components in bucket
+			for (auto index : bucket) { //process all components in bucket
 				auto comp = circuit->components_host[index];
 				
 				if (is_combinatorial(comp)) { //same processing as in StochasticCircuit: divide into component types, specified by counts and offsets
@@ -157,7 +157,7 @@ namespace scsim {
 		uint32_t block_size_y = __min(circuit->sim_length_words, 64); //block size y: words to simulate
 		uint32_t grid_size_y = (circuit->sim_length_words + block_size_y - 1) / block_size_y;
 
-		for each (auto& info in bucket_info) { //process buckets, second round: generate cuda graph
+		for (auto& info : bucket_info) { //process buckets, second round: generate cuda graph
 			auto sequential_count = info.total_count - info.combinatorial_count;
 
 			uint32_t block_size_calcp = __min(info.total_count, 256);

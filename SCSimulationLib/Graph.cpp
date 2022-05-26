@@ -23,8 +23,8 @@ namespace scsim {
 	}
 
 	void Graph::clear_graph() {
-		for each (auto edges in adj_list) edges.clear();
-		for each (auto rev_edges in rev_adj_list) rev_edges.clear();
+		for (auto edges : adj_list) edges.clear();
+		for (auto rev_edges : rev_adj_list) rev_edges.clear();
 		num_edges = 0;
 		adj_list.clear();
 		rev_adj_list.clear();
@@ -33,8 +33,8 @@ namespace scsim {
 	}
 
 	void Graph::clear_edges() {
-		for each (auto edges in adj_list) edges.clear();
-		for each (auto rev_edges in rev_adj_list) rev_edges.clear();
+		for (auto edges : adj_list) edges.clear();
+		for (auto rev_edges : rev_adj_list) rev_edges.clear();
 		for (uint32_t i = 0; i < num_vertices; i++) {
 			indegree_zero.insert(i);
 			outdegree_zero.insert(i);
@@ -115,7 +115,7 @@ namespace scsim {
 					return false;
 				} else { //current vertex not visited in this iteration: keep in stack for later completion of the subtree, push children, mark as visited
 					dfs_stack.push(std::make_pair(v.first, true));
-					for each (auto w in children) dfs_stack.push(std::make_pair(w, false));
+					for (auto w : children) dfs_stack.push(std::make_pair(w, false));
 					visit_marks[v.first] = true;
 				}
 			}
@@ -132,7 +132,7 @@ namespace scsim {
 		distances.clear();
 		distances.resize(num_vertices, (int64_t)UINT32_MAX + 1);
 		if (source < 0) {
-			for each (auto root in indegree_zero) distances[root] = 0;
+			for (auto root : indegree_zero) distances[root] = 0;
 		} else {
 			distances[source] = 0;
 		}
@@ -153,7 +153,7 @@ namespace scsim {
 
 			auto newdist = distances[vertex] + 1; //new proposed distance for children
 
-			for each (auto child in adj_list[vertex]) { //update children where necessary (shorter path found)
+			for (auto child : adj_list[vertex]) { //update children where necessary (shorter path found)
 				if (distances[child] > newdist) {
 					distances[child] = newdist;
 					if (predecessors != nullptr) predecessors->operator[](child) = vertex;
@@ -169,7 +169,7 @@ namespace scsim {
 		distances.clear();
 		distances.resize(num_vertices, (int64_t)UINT32_MAX + 1);
 		if (source < 0) {
-			for each (auto root in indegree_zero) distances[root] = 0;
+			for (auto root : indegree_zero) distances[root] = 0;
 		} else {
 			distances[source] = 0;
 		}
@@ -191,7 +191,7 @@ namespace scsim {
 			auto newdist = distances[vertex] + 1; //new proposed distance for children
 			if (newdist > UINT32_MAX) continue; //don't care about path if unreachable
 
-			for each (auto child in adj_list[vertex]) { //update children where necessary (previously unreachable, or longer path found)
+			for (auto child : adj_list[vertex]) { //update children where necessary (previously unreachable, or longer path found)
 				if (distances[child] > UINT32_MAX || distances[child] < newdist) {
 					distances[child] = newdist;
 					if (predecessors != nullptr) predecessors->operator[](child) = vertex;
@@ -207,7 +207,7 @@ namespace scsim {
 		distances.clear();
 		distances.resize(num_vertices, (int64_t)UINT32_MAX + 1);
 		if (dest < 0) {
-			for each (auto leaf in outdegree_zero) distances[leaf] = 0;
+			for (auto leaf : outdegree_zero) distances[leaf] = 0;
 		} else {
 			distances[dest] = 0;
 		}
@@ -228,7 +228,7 @@ namespace scsim {
 
 			auto newdist = distances[vertex] + 1; //new proposed distance for parents
 
-			for each (auto parent in rev_adj_list[vertex]) { //update parents where necessary (shorter path found)
+			for (auto parent : rev_adj_list[vertex]) { //update parents where necessary (shorter path found)
 				if (distances[parent] > newdist) {
 					distances[parent] = newdist;
 					if (successors != nullptr) successors->operator[](parent) = vertex;
@@ -244,7 +244,7 @@ namespace scsim {
 		distances.clear();
 		distances.resize(num_vertices, (int64_t)UINT32_MAX + 1);
 		if (dest < 0) {
-			for each (auto leaf in outdegree_zero) distances[leaf] = 0;
+			for (auto leaf : outdegree_zero) distances[leaf] = 0;
 		} else {
 			distances[dest] = 0;
 		}
@@ -266,7 +266,7 @@ namespace scsim {
 			auto newdist = distances[vertex] + 1; //new proposed distance for parents
 			if (newdist > UINT32_MAX) continue; //don't care about path if unreachable
 
-			for each (auto parent in rev_adj_list[vertex]) { //update parents where necessary (previously unreachable, or longer path found)
+			for (auto parent : rev_adj_list[vertex]) { //update parents where necessary (previously unreachable, or longer path found)
 				if (distances[parent] > UINT32_MAX || distances[parent] < newdist) {
 					distances[parent] = newdist;
 					if (successors != nullptr) successors->operator[](parent) = vertex;
