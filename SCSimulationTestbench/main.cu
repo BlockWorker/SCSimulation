@@ -15,7 +15,11 @@
 #include "MLPLayerSizeTestbench.cuh"
 #include "CycleTestbench.cuh"
 
-//#include "Graph.h"
+#include "ParallelCounter.cuh"
+#include "Btanh.cuh"
+#include "FCLayer.cuh"
+#include "ConvolutionLayer.cuh"
+#include "MaxPoolLayer.cuh"
 
 constexpr uint32_t SIM_RUNS = 5;
 
@@ -161,7 +165,7 @@ void run(uint64_t max_mem) {
 }
 
 int main() {
-	//*
+	/*
 	try {
 		cu(cudaSetDevice(0));
 		cudaDeviceProp prop;
@@ -177,50 +181,36 @@ int main() {
 		std::cerr << e.what() << std::endl;
 	}
 	/*/
-	scsim::Graph g(7);
-	g.add_edge(4, 1);
-	g.add_edge(4, 3);
-	g.add_edge(1, 2);
-	g.add_edge(3, 2);
-	g.add_edge(2, 0);
-	g.add_edge(6, 0);
-	g.add_edge(5, 3);
-	g.add_edge(5, 2);
-	g.add_edge(1, 3);
+	try {
+		StochasticCircuitFactory f(true);
+		f.set_sim_length(2048);
 
-	std::vector<uint32_t> topsort1;
-	auto res1 = g.topological_sort(topsort1);
+		auto zero_pad = f.add_net();
 
-	std::vector<int64_t> sssp_distances;
-	std::vector<int64_t> sslp_distances;
-	g.topological_sssp(topsort1, -1, sssp_distances);
-	g.topological_sslp(topsort1, -1, sslp_distances);
+		auto in_size = 32;
+		auto in_channels = 3;
+		auto scale_factor = 1.;
 
-	std::vector<int64_t> sdsp_distances;
-	std::vector<int64_t> sdlp_distances;
-	g.topological_sdsp(topsort1, -1, sdsp_distances);
-	g.topological_sdlp(topsort1, -1, sdlp_distances);
+		auto first_input = f.add_nets(in_size * in_size * in_channels).first;
 
-	std::cout << "First: " << res1 << std::endl;
-	std::cout << "Order: ";
-	for each (auto v in topsort1) std::cout << v << ", ";
-	std::cout << std::endl << std::endl;
+		ConvolutionLayer conv1(f, in_size, in_size, in_channels, first_input, 20, 4, 4, zero_pad, scale_factor);
+		MaxPoolLayer pool1(f, conv1.total_width, conv1.total_height, conv1.output_depth, conv1.first_output(), 2, 2);
+		ConvolutionLayer conv2(f, pool1.output_width, pool1.output_height, pool1.layers, pool1.first_output(), 40, 3, 3, zero_pad, scale_factor);
+		MaxPoolLayer pool2(f, conv2.total_width, conv2.total_height, conv2.output_depth, conv2.first_output(), 2, 2);
+		ConvolutionLayer conv3(f, pool2.output_width, pool2.output_height, pool2.layers, pool2.first_output(), 60, 3, 3, zero_pad, scale_factor);
+		ConvolutionLayer conv4(f, conv3.total_width, conv3.total_height, conv3.output_depth, conv3.first_output(), 60, 3, 3, zero_pad, scale_factor);
+		MaxPoolLayer pool3(f, conv4.total_width, conv4.total_height, conv4.output_depth, conv4.first_output(), 2, 2);
+		FCLayer fc1(f, pool3.output_width * pool3.output_height * pool3.layers, pool3.first_output(), 64, scale_factor);
 
-	std::cout << "SSSP distances: ";
-	for each (auto d in sssp_distances) std::cout << d << ", ";
-	std::cout << std::endl << std::endl;
 
-	std::cout << "SSLP distances: ";
-	for each (auto d in sslp_distances) std::cout << d << ", ";
-	std::cout << std::endl << std::endl;
+		std::cout << "Nets: " << f.get_num_nets() << ", Components: " << f.get_num_components() << std::endl;
 
-	std::cout << "SDSP distances: ";
-	for each (auto d in sdsp_distances) std::cout << d << ", ";
-	std::cout << std::endl << std::endl;
+		auto c = f.create_circuit();
 
-	std::cout << "SDLP distances: ";
-	for each (auto d in sdlp_distances) std::cout << d << ", ";
-	std::cout << std::endl << std::endl;
+		c->simulate_circuit();
+	} catch (std::runtime_error& e) {
+		std::cerr << e.what() << std::endl;
+	}
 	//*/
 
 	std::cout << "Press return to exit...";

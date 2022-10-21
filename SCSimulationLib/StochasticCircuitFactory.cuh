@@ -47,6 +47,9 @@ namespace scsim {
 			return index;
 		}
 
+		uint32_t get_num_nets() const;
+		uint32_t get_num_components() const;
+
 	private:
 		friend CircuitComponent;
 		

@@ -23,6 +23,7 @@ namespace scsim {
 
 	void LFSR::reset_state() {
 		state[0] = std::random_device()() | 1u;
+		if (!circuit->host_only) cu(cudaMemcpy(((LFSR*)dev_ptr)->state, state, sizeof(uint32_t), cudaMemcpyHostToDevice));
 	}
 
 	void LFSR::simulate_step_host() {
@@ -43,7 +44,7 @@ namespace scsim {
 				}
 
 				uint32_t tap_state = state[0] & 0x80200003u; //taps on bits 31, 21, 1, 0 for period 2^32-1
-				auto feedback = popcnt(&tap_state, sizeof(uint32_t)) & 1u;
+				auto feedback = popcnt64(tap_state) & 1u;
 
 				auto outbit = takebit(state[0]); //remove bit, shift, add feedback
 				state[0] <<= 1;

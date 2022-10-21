@@ -13,12 +13,18 @@ set (SCSIMLIB_COMPONENT_HEADERS
   BasicCombinatorial.cuh
   LFSR.cuh
   Stanh.cuh
+  ParallelCounter.cuh
+  Btanh.cuh
+  MaxApprox.cuh
 )
 
 set (SCSIMLIB_COMPONENT_SOURCES
   BasicCombinatorial.cu
   LFSR.cu
   Stanh.cu
+  ParallelCounter.cu
+  Btanh.cu
+  MaxApprox.cu
 )
 
 set (SCSIMLIB_SCHEDULING_HEADERS

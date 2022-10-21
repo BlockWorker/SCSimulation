@@ -39,14 +39,8 @@ protected:
 	virtual uint32_t build_circuit(uint32_t setup) override {
 		auto num_runs = __min(num_setups - setup, max_iter_runs);
 
-		curr_max_sim_length = min_sim_length;
-		count = 16;
-		for (uint32_t i = 0; i < setup; i++) {
-			count *= 2;
-		}
-		for (uint32_t i = 1; i < num_runs; i++) {
-			curr_max_sim_length *= 2;
-		}
+		curr_max_sim_length = min_sim_length << (num_runs - 1);
+		count = 16 << setup;
 
 		factory.set_sim_length(curr_max_sim_length);
 
@@ -60,11 +54,8 @@ protected:
 		return num_runs;
 	}
 
-	virtual uint32_t config_circuit(uint32_t setup, uint32_t iteration, bool device) override {
-		uint32_t iter_sim_length = min_sim_length;
-		for (uint32_t i = 0; i < iteration; i++) {
-			iter_sim_length *= 2;
-		}
+	virtual void config_circuit(uint32_t setup, uint32_t iteration, uint32_t input, bool device) override {
+		uint32_t iter_sim_length = min_sim_length << iteration;
 
 		if (!device) {
 			numbers = (StochasticNumber**)calloc(count + 1, sizeof(StochasticNumber*));
@@ -87,8 +78,10 @@ protected:
 			numbers = nullptr;
 			vals = nullptr;
 		}
+	}
 
-		return iter_sim_length;
+	virtual uint32_t get_iter_length(uint32_t setup, uint32_t iteration) {
+		return min_sim_length << iteration;
 	}
 
 	virtual void write_additional_column_titles(std::stringstream& ss) override {

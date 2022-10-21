@@ -238,6 +238,14 @@ namespace scsim {
 		return index;
 	}
 
+	uint32_t StochasticCircuitFactory::get_num_nets() const {
+		return num_nets;
+	}
+
+	uint32_t StochasticCircuitFactory::get_num_components() const {
+		return components.size();
+	}
+
 	uint32_t StochasticCircuitFactory::add_component_internal(CircuitComponent* component) {
 		size_t index = components.size();
 

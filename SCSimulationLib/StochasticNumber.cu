@@ -500,4 +500,83 @@ namespace scsim {
 		free(outputs);
 	}
 
+	__global__ void sneval_kern(uint32_t** values, uint32_t word_length, uint32_t* result_sums) {
+		auto num = blockIdx.x;
+		auto thread_idx = threadIdx.x;
+		auto word_idx = blockIdx.y * blockDim.x + thread_idx;
+
+		__shared__ uint32_t block_values[1024];
+
+		if (word_idx < word_length) {
+			block_values[thread_idx] = __popc(values[num][word_idx]);
+		}
+
+		if (thread_idx == 0) {
+			auto words = __min(word_length - blockIdx.y * blockDim.x, 1024);
+			uint32_t sum = 0;
+			for (uint32_t i = 0; i < words; i++) sum += block_values[i];
+			atomicAdd(result_sums + num, sum);
+		}
+
+		__syncthreads();
+	}
+
+	void StochasticNumber::evaluate_bitstreams_cuda(uint32_t** inputs, uint32_t length, double* values_unipolar, size_t count) {
+		if (length == 0) throw std::runtime_error("evaluate_bitstreams_cuda: Length must be greater than zero.");
+		if (count == 0) throw std::runtime_error("evaluate_bitstreams_cuda: Count must be greater than zero.");
+
+		auto word_length = (length + 31) / 32;
+
+		uint32_t* sums = nullptr;
+		uint32_t* sum_dev = nullptr;
+		uint32_t** inputs_dev = nullptr;
+
+		try {
+			sums = (uint32_t*)malloc(count * sizeof(uint32_t));
+			if (sums == nullptr) throw std::runtime_error("evaluate_bitstreams_cuda: Out of memory");
+
+			cu(cudaMalloc(&sum_dev, count * sizeof(uint32_t)));
+			cu(cudaMalloc(&inputs_dev, count * sizeof(uint32_t*)));
+
+			cu(cudaMemcpy(inputs_dev, inputs, count * sizeof(uint32_t*), cudaMemcpyHostToDevice));
+
+			auto block_size = __min(word_length, 1024);
+			dim3 grid_size(count, (word_length + block_size - 1) / block_size);
+
+			sneval_kern<<<grid_size, block_size>>>(inputs_dev, word_length, sum_dev); //evaluate on device
+			cu_kernel_errcheck();
+
+			cu(cudaMemcpy(sums, sum_dev, count * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+		} catch (CudaError& error) {
+			free(sums);
+			cu_ignore_error(cudaFree(sum_dev));
+			cu_ignore_error(cudaFree(inputs_dev));
+
+			throw error;
+		}
+
+		auto dLength = (double)length;
+		for (uint32_t i = 0; i < count; i++) {
+			values_unipolar[i] = (double)sums[i] / dLength;
+		}
+
+		free(sums);
+		cu_ignore_error(cudaFree(sum_dev));
+		cu_ignore_error(cudaFree(inputs_dev));
+	}
+
+	void StochasticNumber::evaluate_bitstreams_cuda(uint32_t* input, size_t input_pitch, uint32_t length, double* values_unipolar, size_t count) {
+		if (length == 0) throw std::runtime_error("evaluate_bitstreams_cuda: Length must be greater than zero.");
+		if (count == 0) throw std::runtime_error("evaluate_bitstreams_cuda: Count must be greater than zero.");
+
+		auto inputs = (uint32_t**)malloc(count * sizeof(uint32_t*));
+		for (size_t i = 0; i < count; i++) {
+			inputs[i] = (uint32_t*)((char*)input + (i * input_pitch));
+		}
+
+		evaluate_bitstreams_cuda(inputs, length, values_unipolar, count);
+
+		free(inputs);
+	}
+
 }

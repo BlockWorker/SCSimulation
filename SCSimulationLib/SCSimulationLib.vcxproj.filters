@@ -26,6 +26,15 @@
     <CudaCompile Include="AsapScheduler.cu">
       <Filter>Scheduling</Filter>
     </CudaCompile>
+    <CudaCompile Include="ParallelCounter.cu">
+      <Filter>Components</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Btanh.cu">
+      <Filter>Components</Filter>
+    </CudaCompile>
+    <CudaCompile Include="MaxApprox.cu">
+      <Filter>Components</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicCombinatorial.cuh">
@@ -60,6 +69,15 @@
     </ClInclude>
     <ClInclude Include="AsapScheduler.cuh">
       <Filter>Scheduling</Filter>
+    </ClInclude>
+    <ClInclude Include="ParallelCounter.cuh">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Btanh.cuh">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="MaxApprox.cuh">
+      <Filter>Components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

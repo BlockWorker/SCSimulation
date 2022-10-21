@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="main.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BitwiseAbleComponents.cuh" />
+    <ClInclude Include="ChainedInverterTestbench.cuh" />
+    <ClInclude Include="CycleTestbench.cuh" />
+    <ClInclude Include="InverterTestbench.cuh" />
+    <ClInclude Include="MLPLayerCountTestbench.cuh" />
+    <ClInclude Include="MLPLayerSizeTestbench.cuh" />
+    <ClInclude Include="MuxNTestbench.cuh" />
+    <ClInclude Include="SquarerTestbench.cuh" />
+    <ClInclude Include="StanhTestbench.cuh" />
+    <ClInclude Include="Testbench.cuh" />
+    <ClInclude Include="FCLayer.cuh">
+      <Filter>NeuralNet</Filter>
+    </ClInclude>
+    <ClInclude Include="ConvolutionLayer.cuh">
+      <Filter>NeuralNet</Filter>
+    </ClInclude>
+    <ClInclude Include="MaxPoolLayer.cuh">
+      <Filter>NeuralNet</Filter>
+    </ClInclude>
+    <ClInclude Include="SoftwareFCLayer.h">
+      <Filter>NeuralNet</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="NeuralNet">
+      <UniqueIdentifier>{dce26fcf-782f-4188-836d-a981788e42ae}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

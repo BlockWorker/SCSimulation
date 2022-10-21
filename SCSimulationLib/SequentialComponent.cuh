@@ -22,6 +22,7 @@ namespace scsim {
 
 		virtual void reset_state() override {
 			memset(state, 0, state_size * sizeof(uint32_t));
+			if (!circuit->host_only) cu(cudaMemset(((SequentialComponent*)dev_ptr)->state, 0, state_size * sizeof(uint32_t)));
 		}
 
 	protected:

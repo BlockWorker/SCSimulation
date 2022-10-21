@@ -84,6 +84,10 @@ namespace scsim {
 		simulation_finished = false;
 		memset(net_progress_host, 0, num_nets * sizeof(uint32_t)); //clear progress on all nets
 		memset(component_progress_host, 0, 2 * num_components * sizeof(uint32_t)); //clear progress on all components
+		if (!host_only) {
+			cu(cudaMemset(net_progress_dev, 0, num_nets * sizeof(uint32_t)));
+			cu(cudaMemset(component_progress_dev, 0, 2 * num_components * sizeof(uint32_t)));
+		}
 
 		for (uint32_t i = 0; i < num_components_seq; i++) {
 			components_host[num_components_comb + i]->reset_state(); //reset sequential component states
@@ -121,7 +125,7 @@ namespace scsim {
 		set_net_value_bipolar(net, value, sim_length);
 	}
 
-	void StochasticCircuit::set_net_values_curand(uint32_t* nets, double* values_unipolar, uint32_t count, uint32_t length) {
+	void StochasticCircuit::set_net_values_curand(uint32_t* nets, double* values_unipolar, uint32_t count, uint32_t length, bool copy) {
 		if (host_only) throw std::runtime_error("set_net_values_curand: Cannot be used in host-only circuits.");
 		if (length == 0) throw std::runtime_error("set_net_values_curand: Length must be greater than zero.");
 		if (length > sim_length) throw std::runtime_error("set_net_values_curand: Length exceeds the simulation time span.");
@@ -138,7 +142,7 @@ namespace scsim {
 
 		uint32_t max_batch = MAX_CURAND_BATCH_WORDS / word_length; //number of nets in one batch
 
-		copy_data_to_device(length);
+		if (copy) copy_data_to_device(length);
 
 		for (uint32_t batch_offset = 0; batch_offset < count; batch_offset += max_batch) { //generate net values
 			uint32_t batch_size = __min(count - batch_offset, max_batch);
@@ -146,7 +150,7 @@ namespace scsim {
 			StochasticNumber::generate_bitstreams_curand(netvalue_ptrs + batch_offset, length, values_unipolar + batch_offset, batch_size);
 		}
 
-		copy_data_from_device(length);
+		if (copy) copy_data_from_device(length);
 
 		for (uint32_t i = 0; i < count; i++) { //update net progress
 			net_progress_host[nets[i]] = length;
@@ -155,11 +159,11 @@ namespace scsim {
 		free(netvalue_ptrs);
 	}
 
-	void StochasticCircuit::set_net_values_curand(uint32_t* nets, double* values_unipolar, uint32_t count) {
-		set_net_values_curand(nets, values_unipolar, count, sim_length);
+	void StochasticCircuit::set_net_values_curand(uint32_t* nets, double* values_unipolar, uint32_t count, bool copy) {
+		set_net_values_curand(nets, values_unipolar, count, sim_length, copy);
 	}
 
-	void StochasticCircuit::set_net_values_curand(uint32_t first_net, double* values_unipolar, uint32_t count, uint32_t length) {
+	void StochasticCircuit::set_net_values_curand(uint32_t first_net, double* values_unipolar, uint32_t count, uint32_t length, bool copy) {
 		if (host_only) throw std::runtime_error("set_net_values_curand: Cannot be used in host-only circuits.");
 		if (length == 0) throw std::runtime_error("set_net_values_curand: Length must be greater than zero.");
 		if (length > sim_length) throw std::runtime_error("set_net_values_curand: Length exceeds the simulation time span.");
@@ -175,7 +179,7 @@ namespace scsim {
 
 		uint32_t max_batch = MAX_CURAND_BATCH_WORDS / word_length; //number of nets in one batch
 
-		copy_data_to_device(length);
+		if (copy) copy_data_to_device(length);
 
 		for (uint32_t batch_offset = 0; batch_offset < count; batch_offset += max_batch) { //generate net values
 			uint32_t batch_size = __min(count - batch_offset, max_batch);
@@ -183,7 +187,7 @@ namespace scsim {
 			StochasticNumber::generate_bitstreams_curand(netvalue_ptrs + batch_offset, length, values_unipolar + batch_offset, batch_size);
 		}
 
-		copy_data_from_device(length);
+		if (copy) copy_data_from_device(length);
 
 		for (uint32_t i = 0; i < count; i++) { //update net progress
 			net_progress_host[first_net + i] = length;
@@ -192,8 +196,8 @@ namespace scsim {
 		free(netvalue_ptrs);
 	}
 
-	void StochasticCircuit::set_net_values_curand(uint32_t first_net, double* values_unipolar, uint32_t count) {
-		set_net_values_curand(first_net, values_unipolar, count, sim_length);
+	void StochasticCircuit::set_net_values_curand(uint32_t first_net, double* values_unipolar, uint32_t count, bool copy) {
+		set_net_values_curand(first_net, values_unipolar, count, sim_length, copy);
 	}
 
 	void StochasticCircuit::set_net_value_constant(uint32_t net, bool value, uint32_t length) {
@@ -469,6 +473,57 @@ namespace scsim {
 		if (net_progress_host[net] == 0) throw std::runtime_error("get_net_value_bipolar: Given net is undefined for the entire simulation time span.");
 
 		return net_numbers[net].get_value_bipolar();
+	}
+
+	void StochasticCircuit::get_net_values_cuda(uint32_t* nets, double* values_unipolar, uint32_t count, uint32_t length, bool copy) {
+		if (host_only) throw std::runtime_error("get_net_values_cuda: Cannot be used in host-only circuits.");
+		if (length == 0 || length % 32 != 0) throw std::runtime_error("get_net_values_cuda: Length must be a multiple of 32 and greater than zero.");
+		if (length > sim_length) throw std::runtime_error("get_net_values_cuda: Length exceeds the simulation time span.");
+		if (count == 0) throw std::runtime_error("get_net_values_cuda: Count must be greater than zero.");
+
+		auto netvalue_ptrs = (uint32_t**)malloc(count * sizeof(uint32_t*)); //calculate device pointers for net data
+		for (uint32_t i = 0; i < count; i++) {
+			uint32_t net = nets[i];
+			if (net >= num_nets) throw std::runtime_error("get_net_values_cuda: Invalid net index.");
+			netvalue_ptrs[i] = (uint32_t*)((char*)net_values_dev + (net * net_values_dev_pitch));
+		}
+
+		auto word_length = length / 32;
+
+		if (copy) copy_data_to_device(length);
+
+		StochasticNumber::evaluate_bitstreams_cuda(netvalue_ptrs, length, values_unipolar, count);
+
+		free(netvalue_ptrs);
+	}
+
+	void StochasticCircuit::get_net_values_cuda(uint32_t* nets, double* values_unipolar, uint32_t count, bool copy) {
+		get_net_values_cuda(nets, values_unipolar, count, sim_length, copy);
+	}
+
+	void StochasticCircuit::get_net_values_cuda(uint32_t first_net, double* values_unipolar, uint32_t count, uint32_t length, bool copy) {
+		if (host_only) throw std::runtime_error("get_net_values_cuda: Cannot be used in host-only circuits.");
+		if (length == 0 || length % 32 != 0) throw std::runtime_error("get_net_values_cuda: Length must be a multiple of 32 and greater than zero.");
+		if (length > sim_length) throw std::runtime_error("get_net_values_cuda: Length exceeds the simulation time span.");
+		if (count == 0) throw std::runtime_error("get_net_values_cuda: Count must be greater than zero.");
+		if (first_net + count > num_nets) throw std::runtime_error("get_net_values_cuda: Invalid first net index and/or too many nets.");
+
+		auto netvalue_ptrs = (uint32_t**)malloc(count * sizeof(uint32_t*)); //calculate device pointers for net data
+		for (uint32_t i = 0; i < count; i++) {
+			netvalue_ptrs[i] = (uint32_t*)((char*)net_values_dev + ((first_net + i) * net_values_dev_pitch));
+		}
+
+		auto word_length = length / 32;
+
+		if (copy) copy_data_to_device(length);
+
+		StochasticNumber::evaluate_bitstreams_cuda(netvalue_ptrs, length, values_unipolar, count);
+
+		free(netvalue_ptrs);
+	}
+
+	void StochasticCircuit::get_net_values_cuda(uint32_t first_net, double* values_unipolar, uint32_t count, bool copy) {
+		get_net_values_cuda(first_net, values_unipolar, count, sim_length, copy);
 	}
 
 	CircuitComponent* StochasticCircuit::get_component(uint32_t index) {

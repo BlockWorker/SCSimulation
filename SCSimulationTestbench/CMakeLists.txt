@@ -17,6 +17,10 @@ set(SCSIMTB_HEADERS
   SquarerTestbench.cuh
   StanhTestbench.cuh
   Testbench.cuh
+  FCLayer.cuh
+  ConvolutionLayer.cuh
+  MaxPoolLayer.cuh
+  SoftwareFCLayer.h
 )
 
 set(SCSIMTB_SOURCES

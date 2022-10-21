@@ -22,6 +22,7 @@ namespace scsim {
 
 	void Stanh::reset_state() {
 		state[0] = k / 2;
+		if (!circuit->host_only) cu(cudaMemcpy(((Stanh*)dev_ptr)->state, state, sizeof(uint32_t), cudaMemcpyHostToDevice));
 	}
 
 	void Stanh::simulate_step_host() {

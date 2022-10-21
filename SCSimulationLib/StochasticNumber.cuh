@@ -120,6 +120,9 @@ namespace scsim {
 		static void generate_bitstreams_curand(uint32_t** outputs, uint32_t length, const double* values_unipolar, size_t count);
 		static void generate_bitstreams_curand(uint32_t* output, size_t output_pitch, uint32_t length, const double* values_unipolar, size_t count);
 
+		static void evaluate_bitstreams_cuda(uint32_t** inputs, uint32_t length, double* values_unipolar, size_t count);
+		static void evaluate_bitstreams_cuda(uint32_t* input, size_t input_pitch, uint32_t length, double* values_unipolar, size_t count);
+
 	};
 
 }
