@@ -26,6 +26,14 @@
     <ClInclude Include="SoftwareFCLayer.h">
       <Filter>NeuralNet</Filter>
     </ClInclude>
+    <ClInclude Include="CNNTestbench.cuh" />
+    <ClInclude Include="NumericCSVReader.h">
+      <Filter>NeuralNet</Filter>
+    </ClInclude>
+    <ClInclude Include="BinaryDoubleReader.h">
+      <Filter>NeuralNet</Filter>
+    </ClInclude>
+    <ClInclude Include="PCBTanhTestbench.cuh" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
@@ -34,5 +42,13 @@
     <Filter Include="NeuralNet">
       <UniqueIdentifier>{dce26fcf-782f-4188-836d-a981788e42ae}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NumericCSVReader.cpp">
+      <Filter>NeuralNet</Filter>
+    </ClCompile>
+    <ClCompile Include="BinaryDoubleReader.cpp">
+      <Filter>NeuralNet</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

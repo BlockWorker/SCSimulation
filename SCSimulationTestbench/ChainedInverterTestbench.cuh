@@ -13,6 +13,7 @@ public:
 		in = 0;
 		out = 0;
 		curr_max_sim_length = min_sim_length;
+		number = nullptr;
 	}
 
 protected:
@@ -32,6 +33,7 @@ protected:
 		auto setup_id = setup / 2;
 		auto setup_kind = setup % 2;
 		auto num_runs = __min(setups - setup_id, max_iter_runs);
+		if (setup_id >= 2 && num_runs >= 2 && num_runs < max_iter_runs) num_runs = 2; //reduce simulation runs - only max length for small setups, then restrict to 2 runs each
 
 		curr_max_sim_length = min_sim_length << (num_runs - 1);
 		count = 16 << setup_id;
@@ -63,6 +65,10 @@ protected:
 		circuit->set_net_value(in, *number);
 
 		if (device) delete number;
+	}
+
+	virtual uint32_t get_iter_length(uint32_t setup, uint32_t iteration) {
+		return min_sim_length << iteration;
 	}
 
 	virtual void write_additional_column_titles(std::stringstream& ss) override {

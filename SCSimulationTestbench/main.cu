@@ -14,14 +14,14 @@
 #include "MLPLayerCountTestbench.cuh"
 #include "MLPLayerSizeTestbench.cuh"
 #include "CycleTestbench.cuh"
+#include "PCBtanhTestbench.cuh"
+#include "CNNTestbench.cuh"
 
-#include "ParallelCounter.cuh"
-#include "Btanh.cuh"
 #include "FCLayer.cuh"
 #include "ConvolutionLayer.cuh"
 #include "MaxPoolLayer.cuh"
 
-constexpr uint32_t SIM_RUNS = 5;
+constexpr uint32_t SIM_RUNS = 1;
 
 constexpr uint32_t MIN_SN_LENGTH_MLP = 1 << 8;
 constexpr uint32_t MIN_SN_LENGTH = 1 << 11;
@@ -31,19 +31,18 @@ constexpr uint64_t MEM_PER_COMP = 512;
 
 uint32_t max_setups(uint64_t max_mem, uint32_t comp_per_unit, uint32_t nets_per_unit, uint32_t min_bits) {
 	uint32_t min_sim_len_words = (min_bits + 31) / 32;
-	if (min_sim_len_words <= 8) min_sim_len_words = 8;
-	else if (min_sim_len_words <= 16) min_sim_len_words = 16;
-	else min_sim_len_words = ((min_sim_len_words + 31) / 32) * 32;
+	/*if (min_sim_len_words <= 128) min_sim_len_words = 128;
+	else min_sim_len_words = ((min_sim_len_words + 127) / 128) * 128;*/
 	uint64_t unit_bytes = MEM_PER_COMP * comp_per_unit + sizeof(uint32_t) * (min_sim_len_words + 1) * nets_per_unit;
 	uint64_t max_units = max_mem / unit_bytes;
-	return (uint32_t)floor(log2(max_units)) - 3;
+	return (uint32_t)floor(log2(max_units)) - 2;
 }
 
 std::pair<uint32_t, uint32_t> max_setups_nn(uint64_t max_mem, uint32_t layercount, uint32_t min_bits) {
 	uint32_t min_sim_len_words = (min_bits + 31) / 32;
-	if (min_sim_len_words <= 8) min_sim_len_words = 8;
+	/*if (min_sim_len_words <= 8) min_sim_len_words = 8;
 	else if (min_sim_len_words <= 16) min_sim_len_words = 16;
-	else min_sim_len_words = ((min_sim_len_words + 31) / 32) * 32;
+	else min_sim_len_words = ((min_sim_len_words + 31) / 32) * 32;*/
 	uint32_t max_setups = 0;
 	uint64_t comp_bytes = 0;
 	uint64_t net_bytes = 0;
@@ -116,6 +115,7 @@ void run(uint64_t max_mem) {
 
 	uint32_t max_setups_1c2n = __min(max_setups(max_mem, 1, 2, MIN_SN_LENGTH) - 1, 18);
 	uint32_t max_setups_2c2n = __min(max_setups(max_mem, 2, 2, MIN_SN_LENGTH) - 1, 17);
+	uint32_t max_setups_2c9n = __min(max_setups(max_mem, 2, 9, MIN_SN_LENGTH) - 1, 17);
 	uint32_t max_setups_1c9n = __min(max_setups(max_mem, 1, 9, MIN_SN_LENGTH) - 1, 17);
 	auto nn_size_maximums = max_setups_nn(max_mem, 4, MIN_SN_LENGTH_MLP);
 	auto nn_count_maximums = max_layers_nn(max_mem, 128, MIN_SN_LENGTH_MLP);
@@ -137,8 +137,10 @@ void run(uint64_t max_mem) {
 		std::cout << "**** Running bitwise squarer testbench ****" << std::endl;
 		runBench(new SquarerTestbench(MIN_SN_LENGTH, max_setups_2c2n, 10), dir, "squarer_bitwise.csv");
 		//*/
-		//*
+		/*
 		sim_bitwise = false;
+		std::cout << "**** Running PC-Btanh testbench ****" << std::endl;
+		runBench(new PCBtanhTestbench(MIN_SN_LENGTH, 5, max_setups_2c9n, 10), dir, "pcbtanh.csv");
 		std::cout << "**** Running MuxN testbench ****" << std::endl;
 		runBench(new MuxNTestbench(MIN_SN_LENGTH, max_setups_1c9n, 10), dir, "muxn.csv");
 		std::cout << "**** Running inverter testbench ****" << std::endl;
@@ -152,9 +154,13 @@ void run(uint64_t max_mem) {
 		std::cout << "**** Running MLP layer-size testbench ****" << std::endl;
 		runBench(new MLPLayerSizeTestbench(MIN_SN_LENGTH_MLP, 4, nn_size_max_setups, 10), dir, "mlp_ls.csv");
 		//*/
-		//*
+		/*
 		std::cout << "**** Running chained inverter testbench ****" << std::endl;
 		runBench(new ChainedInverterTestbench(MIN_SN_LENGTH, 13, 10), dir, "chained_inverter.csv");
+		//*/
+		//*
+		std::cout << "**** Running CNN testbench ****" << std::endl;
+		runBench(new CNNTestbench(512, 6, 100), dir, "cnn.csv");
 		//*/
 	}
 	/*
@@ -165,7 +171,7 @@ void run(uint64_t max_mem) {
 }
 
 int main() {
-	/*
+	//*
 	try {
 		cu(cudaSetDevice(0));
 		cudaDeviceProp prop;
@@ -174,7 +180,7 @@ int main() {
 		uint64_t sim_max_mem = mem_bytes - RESERVED_MEM;
 		std::cout << "Detected device with " << (mem_bytes / (double)(1 << 30)) << " GB of memory" << std::endl;
 
-		std::this_thread::sleep_for(std::chrono::seconds(5));
+		std::this_thread::sleep_for(std::chrono::seconds(3));
 
 		run(sim_max_mem);
 	} catch (std::runtime_error& e) {
@@ -182,32 +188,48 @@ int main() {
 	}
 	/*/
 	try {
-		StochasticCircuitFactory f(true);
+		StochasticCircuitFactory f(false);
 		f.set_sim_length(2048);
 
-		auto zero_pad = f.add_net();
+		auto print_max = 64;
+		auto inputs = 5;
+		auto ints = 3;
 
-		auto in_size = 32;
-		auto in_channels = 3;
-		auto scale_factor = 1.;
+		auto first_in = f.add_nets(inputs).first;
+		auto first_inter = f.add_nets(ints).first;
+		auto out = f.add_net();
 
-		auto first_input = f.add_nets(in_size * in_size * in_channels).first;
+		auto bt_r = Btanh::calculate_r(inputs, 1.0);
 
-		ConvolutionLayer conv1(f, in_size, in_size, in_channels, first_input, 20, 4, 4, zero_pad, scale_factor);
-		MaxPoolLayer pool1(f, conv1.total_width, conv1.total_height, conv1.output_depth, conv1.first_output(), 2, 2);
-		ConvolutionLayer conv2(f, pool1.output_width, pool1.output_height, pool1.layers, pool1.first_output(), 40, 3, 3, zero_pad, scale_factor);
-		MaxPoolLayer pool2(f, conv2.total_width, conv2.total_height, conv2.output_depth, conv2.first_output(), 2, 2);
-		ConvolutionLayer conv3(f, pool2.output_width, pool2.output_height, pool2.layers, pool2.first_output(), 60, 3, 3, zero_pad, scale_factor);
-		ConvolutionLayer conv4(f, conv3.total_width, conv3.total_height, conv3.output_depth, conv3.first_output(), 60, 3, 3, zero_pad, scale_factor);
-		MaxPoolLayer pool3(f, conv4.total_width, conv4.total_height, conv4.output_depth, conv4.first_output(), 2, 2);
-		FCLayer fc1(f, pool3.output_width * pool3.output_height * pool3.layers, pool3.first_output(), 64, scale_factor);
-
-
-		std::cout << "Nets: " << f.get_num_nets() << ", Components: " << f.get_num_components() << std::endl;
+		factory_add_component(f, ParallelCounter, inputs, first_in, first_inter);
+		factory_add_component(f, Btanh, inputs, bt_r, first_inter, out);
 
 		auto c = f.create_circuit();
 
-		c->simulate_circuit();
+		auto count = 30;
+		auto sqerrsum = 0.0;
+
+		for (uint32_t i = 0; i <= count; i++) {
+			double total = 2.0 * (double)i / (double)count - 1.0;
+			double factor = 1.0;
+			for (uint32_t j = 0; j < inputs - 1; j++) {
+				factor *= .5;
+				c->set_net_value_bipolar(first_in + j, factor * total);
+			}
+			c->set_net_value_bipolar(first_in + inputs - 1, factor * total);
+
+			c->simulate_circuit();
+
+			auto res = c->get_net_value_bipolar(out);
+			auto err = res - tanh(total);
+			sqerrsum += err * err;
+
+			std::cout << "in: " << total << " - Btanh: " << res << ", tanh: " << tanh(total) << ", error: " << err << std::endl;
+
+			c->reset_circuit();
+		}
+
+		std::cout << "rmse: " << sqrt(sqerrsum / (count + 1)) << std::endl;
 	} catch (std::runtime_error& e) {
 		std::cerr << e.what() << std::endl;
 	}

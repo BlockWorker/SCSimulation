@@ -7,3 +7,5 @@ results*/
 library_export.h
 *x64/
 *.vs/
+*.csv
+*.dat

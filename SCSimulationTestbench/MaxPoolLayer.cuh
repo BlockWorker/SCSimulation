@@ -32,32 +32,40 @@ public:
 		auto input_layer_size = input_width * input_height;
 		auto output_layer_size = output_width * output_height;
 
+		//offset multipliers for input/output pixels, to create correct dimension ordering
+		auto input_offset_per_row = input_width * layers;
+		auto output_offset_per_row = output_width * layers;
+		auto pixel_offset_per_column = layers;
+		constexpr auto pixel_offset_per_layer = 1u;
+
 		_first_output = f.add_nets(output_layer_size * layers).first;
 
 		uint32_t* max_inputs = (uint32_t*)malloc(pool_size * sizeof(uint32_t));
 		if (max_inputs == nullptr) throw std::runtime_error("MaxPoolLayer: Out of memory on initialization");
 
-		for (uint32_t l = 0; l < layers; l++) { //layer loop
-			auto input_offset_l = input_layer_size * l;
-			auto output_offset_l = output_layer_size * l;
+		for (uint32_t j = 0; j < output_height; j++) { //output loop: row
+			auto input_offset_y = input_offset_per_row * pool_height * j;
+			auto output_offset_y = output_offset_per_row * j;
 
-			for (uint32_t j = 0; j < output_height; j++) { //output loop: row
-				auto input_offset_ly = input_offset_l + input_width * pool_height * j;
-				auto output_offset_ly = output_offset_l + output_width * j;
+			for (uint32_t i = 0; i < output_width; i++) { //output loop: column
+				auto input_offset_yx = input_offset_y + pixel_offset_per_column * pool_width * i;
+				auto output_offset_yx = output_offset_y + pixel_offset_per_column * i;
 
-				for (uint32_t i = 0; i < output_width; i++) { //output loop: column
-					auto input_offset_lyx = input_offset_ly + pool_width * i;
+				for (uint32_t l = 0; l < layers; l++) { //layer loop
+					auto input_offset_yxl = input_offset_yx + pixel_offset_per_layer * l;
+					auto output_offset_yxl = output_offset_yx + pixel_offset_per_layer * l;
 
 					for (uint32_t t = 0; t < pool_height; t++) { //pool loop: row
 						auto max_offset_y = pool_width * t;
-						auto input_offset_lyxy = input_offset_lyx + input_width * t;
+						auto input_offset_yxly = input_offset_yxl + input_offset_per_row * t;
 
 						for (uint32_t s = 0; s < pool_width; s++) { //pool loop: column
-							max_inputs[max_offset_y + s] = first_input + input_offset_lyxy + s;
+							auto input_offset_yxlyx = input_offset_yxly + pixel_offset_per_column * s;
+							max_inputs[max_offset_y + s] = first_input + input_offset_yxlyx;
 						}
 					}
 
-					factory_add_component(f, MaxApprox, pool_size, max_inputs, _first_output + output_offset_ly + i);
+					factory_add_component(f, MaxApprox, pool_size, max_inputs, _first_output + output_offset_yxl);
 				}
 			}
 		}

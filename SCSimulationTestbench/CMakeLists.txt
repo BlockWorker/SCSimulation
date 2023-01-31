@@ -21,10 +21,16 @@ set(SCSIMTB_HEADERS
   ConvolutionLayer.cuh
   MaxPoolLayer.cuh
   SoftwareFCLayer.h
+  NumericCSVReader.h
+  BinaryDoubleReader.h
+  PCBtanhTestbench.cuh
+  CNNTestbench.cuh
 )
 
 set(SCSIMTB_SOURCES
   main.cu
+  NumericCSVReader.cpp
+  BinaryDoubleReader.cpp
 )
   
 add_executable(scsim-testbench ${SCSIMTB_SOURCES} ${SCSIMTB_HEADERS})
@@ -36,6 +42,11 @@ set_target_properties(scsim-testbench PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(scsim-testbench PROPERTIES OUTPUT_NAME "SCSimulationTestbench")
 
 target_link_libraries(scsim-testbench scsim-lib)
+
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(scsim-testbench OpenMP::OpenMP_CXX)
+endif()
 
 if (MSVC)
   add_definitions(-DUNICODE -D_UNICODE)

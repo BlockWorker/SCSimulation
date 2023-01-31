@@ -27,8 +27,7 @@ namespace scsim {
 		/// <summary>
 		/// Create SN initialized with given data
 		/// </summary>
-		/// <param name="device_data">Whether the data is located in device memory instead of host memory</param>
-		StochasticNumber(uint32_t length, const uint32_t* data, bool device_data = false);
+		StochasticNumber(uint32_t length, const uint32_t* data);
 
 		~StochasticNumber();
 
@@ -117,8 +116,8 @@ namespace scsim {
 
 		void print_internal(double value, const char* ident, uint32_t max_bits) const;
 
-		static void generate_bitstreams_curand(uint32_t** outputs, uint32_t length, const double* values_unipolar, size_t count);
-		static void generate_bitstreams_curand(uint32_t* output, size_t output_pitch, uint32_t length, const double* values_unipolar, size_t count);
+		static void generate_bitstreams_curand(uint32_t** outputs, uint32_t length, const double* values_unipolar_dev, size_t count);
+		static void generate_bitstreams_curand(uint32_t* output, size_t output_pitch, uint32_t length, const double* values_unipolar_dev, size_t count);
 
 		static void evaluate_bitstreams_cuda(uint32_t** inputs, uint32_t length, double* values_unipolar, size_t count);
 		static void evaluate_bitstreams_cuda(uint32_t* input, size_t input_pitch, uint32_t length, double* values_unipolar, size_t count);

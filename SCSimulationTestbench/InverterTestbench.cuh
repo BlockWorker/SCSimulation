@@ -38,6 +38,7 @@ protected:
 
 	virtual uint32_t build_circuit(uint32_t setup) override {
 		auto num_runs = __min(num_setups - setup, max_iter_runs);
+		if (setup >= 2 && num_runs >= 2 && num_runs < max_iter_runs) num_runs = 2; //reduce simulation runs - only max length for small setups, then restrict to 2 runs each
 
 		curr_max_sim_length = min_sim_length << (num_runs - 1);
 		count = 16 << setup;

@@ -2,24 +2,27 @@
 
 #include "Testbench.cuh"
 #include "StochasticNumber.cuh"
-#include "Stanh.cuh"
+#include "ParallelCounter.cuh"
+#include "Btanh.cuh"
 
-class StanhTestbench : public Testbench
+class PCBtanhTestbench : public Testbench
 {
 public:
-	/// <param name="states">Number of states in each Stanh component</param>
-	/// <param name="setups">Number of setups, setup i contains 2^(i+4) Stanh components</param>
-	StanhTestbench(uint32_t min_sim_length, uint32_t states, uint32_t setups, uint32_t max_iter_runs) : Testbench(setups, max_iter_runs), min_sim_length(min_sim_length), states(states), max_iter_runs(max_iter_runs){
+	/// <param name="pc_inputs">Number of parallel cocunter inputs before each Btanh component</param>
+	/// <param name="setups">Number of setups, setup i contains 2^(i+4) PC-Btanh circuits</param>
+	PCBtanhTestbench(uint32_t min_sim_length, uint32_t pc_inputs, uint32_t setups, uint32_t max_iter_runs) : Testbench(setups, max_iter_runs), min_sim_length(min_sim_length), pc_inputs(pc_inputs),
+		pc_intermediates((uint32_t)floor(log2((double)pc_inputs)) + 1), max_iter_runs(max_iter_runs), btanh_r(Btanh::calculate_r(pc_inputs, 1.0)) {
 		numbers = nullptr;
 		vals = nullptr;
 		count = 0;
 		first_in = 0;
+		first_intermediate = 0;
 		first_out = 0;
 		curr_max_sim_length = min_sim_length;
 	}
 
-	virtual ~StanhTestbench() {
-		if (numbers != nullptr) for (uint32_t i = 0; i <= count; i++) delete numbers[i];
+	virtual ~PCBtanhTestbench() {
+		if (numbers != nullptr) for (uint32_t i = 0; i <= count * pc_intermediates; i++) delete numbers[i];
 		free(numbers);
 		free(vals);
 	}
@@ -27,11 +30,14 @@ public:
 protected:
 	const uint32_t min_sim_length;
 	const uint32_t max_iter_runs;
-	const uint32_t states;
+	const uint32_t pc_inputs;
+	const uint32_t pc_intermediates;
+	const uint32_t btanh_r;
 
 	uint32_t curr_max_sim_length;
 
 	uint32_t first_in;
+	uint32_t first_intermediate;
 	uint32_t first_out;
 	uint32_t count;
 
@@ -47,11 +53,13 @@ protected:
 
 		factory.set_sim_length(curr_max_sim_length);
 
-		first_in = factory.add_nets(count + 1).first;
+		first_in = factory.add_nets(pc_inputs * (count + 1)).first;
+		first_intermediate = factory.add_nets(pc_intermediates * (count + 1)).first;
 		first_out = factory.add_nets(count + 1).first;
 
 		for (uint32_t i = 0; i <= count; i++) {
-			factory_add_component(factory, Stanh, first_in + i, first_out + i, states);
+			factory_add_component(factory, ParallelCounter, pc_inputs, first_in + pc_inputs * i, first_intermediate + pc_intermediates * i);
+			factory_add_component(factory, Btanh, pc_inputs, btanh_r, first_intermediate + pc_intermediates * i, first_out + i);
 		}
 
 		return num_runs;
@@ -61,21 +69,27 @@ protected:
 		uint32_t iter_sim_length = min_sim_length << iteration;
 
 		if (!device) {
-			numbers = (StochasticNumber**)calloc(count + 1, sizeof(StochasticNumber*));
-			vals = (double*)malloc((count + 1) * sizeof(double));
-			for (uint32_t i = 0; i <= count; i++) {
-				vals[i] = (double)i / (double)count;
+			numbers = (StochasticNumber**)calloc(pc_inputs * (count + 1), sizeof(StochasticNumber*));
+			vals = (double*)malloc(pc_inputs * (count + 1) * sizeof(double));
+			for (uint32_t i = 0; i <= count; i++) { //create inputs - desired tanh input is (i / count), distribute over PC inputs by way of terminated geometric series
+				double total = 2.0 * (double)i / (double)count - 1.0;
+				double factor = 1.0;
+				for (uint32_t j = 0; j < pc_inputs - 1; j++) {
+					factor *= .5;
+					vals[pc_inputs * i + j] = (factor * total + 1.0) / 2.0;
+				}
+				vals[pc_inputs * (i + 1) - 1] = (factor * total + 1.0) / 2.0; //repeat last term of geometric series, making sum equal to 1 (times desired input)
 			}
 
-			StochasticNumber::generate_multiple_curand(numbers, iter_sim_length, vals, count + 1);
+			StochasticNumber::generate_multiple_curand(numbers, iter_sim_length, vals, pc_inputs * (count + 1));
 		}
 
-		for (uint32_t i = 0; i <= count; i++) {
+		for (uint32_t i = 0; i < pc_inputs * (count + 1); i++) {
 			circuit->set_net_value(first_in + i, *numbers[i]);
 		}
 
 		if (device) {
-			for (uint32_t i = 0; i <= count; i++) delete numbers[i];
+			for (uint32_t i = 0; i < pc_inputs * (count + 1); i++) delete numbers[i];
 			free(numbers);
 			free(vals);
 			numbers = nullptr;
@@ -98,16 +112,17 @@ protected:
 		double errsum_total = 0;
 		for (uint32_t i = 0; i <= count; i++) {
 			auto correct_in = 2.0 * (double)i / (double)count - 1.0;
-			auto actual_in = circuit->get_net_value_bipolar(first_in + i);
+			auto actual_in = 0.0;
+			for (uint32_t j = 0; j < pc_inputs; j++) actual_in += circuit->get_net_value_bipolar(first_in + i * pc_inputs + j);
 			auto in_err = actual_in - correct_in;
 			errsum_in += in_err * in_err;
 
-			auto int_correct_out = tanh((states / 2.0) * actual_in);
+			auto int_correct_out = tanh(actual_in);
 			auto actual_out = circuit->get_net_value_bipolar(first_out + i);
 			auto out_err = actual_out - int_correct_out;
 			errsum_out += out_err * out_err;
 
-			auto total_correct_out = tanh((states / 2.0) * correct_in);
+			auto total_correct_out = tanh(correct_in);
 			auto total_err = actual_out - total_correct_out;
 			errsum_total += total_err * total_err;
 		}

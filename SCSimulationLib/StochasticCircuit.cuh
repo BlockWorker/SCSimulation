@@ -44,7 +44,6 @@ namespace scsim {
 		StochasticCircuit& operator=(StochasticCircuit&&) = delete;
 
 		void reset_circuit();
-		void reset_circuit_dev();
 
 		/// <summary>
 		/// Set the given net's value to the given SN's value for as many bits as the number provides. The number may not be longer than the simulation time span.
@@ -79,7 +78,8 @@ namespace scsim {
 		/// <param name="count">How many net indices are given</param>
 		/// <param name="length">How many bits to generate per net</param>
 		/// <param name="copy">Whether to copy (synchronize) host and device data structures, defaults to true. If false, operates only on the device-side circuit state.</param>
-		void set_net_values_curand(uint32_t* nets, double* values_unipolar, uint32_t count, uint32_t length, bool copy = true);
+		/// <param name="device_values">Whether given value array is located on the host. If false (as by default), assumes a host array and copies it to the device first.</param>
+		void set_net_values_curand(uint32_t* nets, const double* values_unipolar, uint32_t count, uint32_t length, bool copy = true, bool device_values = false);
 
 		/// <summary>
 		/// Set the values of multiple nets quickly for the entire simulation time span without accuracy guarantees. Not efficient for small numbers of nets.
@@ -88,7 +88,8 @@ namespace scsim {
 		/// <param name="values_unipolar">Array of net values to be encoded in unipolar encoding</param>
 		/// <param name="count">How many net indices are given</param>
 		/// <param name="copy">Whether to copy (synchronize) host and device data structures, defaults to true. If false, operates only on the device-side circuit state.</param>
-		void set_net_values_curand(uint32_t* nets, double* values_unipolar, uint32_t count, bool copy = true);
+		/// <param name="device_values">Whether given value array is located on the host. If false (as by default), assumes a host array and copies it to the device first.</param>
+		void set_net_values_curand(uint32_t* nets, const double* values_unipolar, uint32_t count, bool copy = true, bool device_values = false);
 
 		/// <summary>
 		/// Set the values of multiple consecutive nets quickly for the given number of bit times without accuracy guarantees. Not efficient for small numbers of nets.
@@ -98,7 +99,8 @@ namespace scsim {
 		/// <param name="count">How many nets to set starting at first_net</param>
 		/// <param name="length">How many bits to generate per net</param>
 		/// <param name="copy">Whether to copy (synchronize) host and device data structures, defaults to true. If false, operates only on the device-side circuit state.</param>
-		void set_net_values_curand(uint32_t first_net, double* values_unipolar, uint32_t count, uint32_t length, bool copy = true);
+		/// <param name="device_values">Whether given value array is located on the host. If false (as by default), assumes a host array and copies it to the device first.</param>
+		void set_net_values_curand(uint32_t first_net, const double* values_unipolar, uint32_t count, uint32_t length, bool copy = true, bool device_values = false);
 
 		/// <summary>
 		/// Set the values of multiple consecutive nets quickly for the entire simulation time span without accuracy guarantees. Not efficient for small numbers of nets.
@@ -107,7 +109,8 @@ namespace scsim {
 		/// <param name="values_unipolar">Array of net values to be encoded in unipolar encoding</param>
 		/// <param name="count">How many nets to set starting at first_net</param>
 		/// <param name="copy">Whether to copy (synchronize) host and device data structures, defaults to true. If false, operates only on the device-side circuit state.</param>
-		void set_net_values_curand(uint32_t first_net, double* values_unipolar, uint32_t count, bool copy = true);
+		/// <param name="device_values">Whether given value array is located on the host. If false (as by default), assumes a host array and copies it to the device first.</param>
+		void set_net_values_curand(uint32_t first_net, const double* values_unipolar, uint32_t count, bool copy = true, bool device_values = false);
 
 		/// <summary>
 		/// Set the first [length] bits of the given net to all zeroes or all ones (chosen by "value")

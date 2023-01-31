@@ -29,9 +29,8 @@ namespace scsim {
 		uint32_t state[state_size] = { 0 };
 
 		virtual void init_with_circuit(StochasticCircuit* circuit, uint32_t* progress_host_ptr, uint32_t* progress_dev_ptr, size_t* calc_scratchpad) override {
-			reset_state();
-
 			CircuitComponent::init_with_circuit(circuit, progress_host_ptr, progress_dev_ptr, calc_scratchpad);
+			reset_state();
 		}
 
 	};

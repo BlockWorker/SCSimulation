@@ -4,6 +4,11 @@
 #include <vector>
 #include "library_export.h"
 
+#undef ALLOCSIZETEST
+//#define ALLOCSIZETEST
+
+#define FAST_MEMPITCH_THRESHOLD 512
+
 namespace scsim {
 
 	class StochasticCircuit;
@@ -20,7 +25,9 @@ namespace scsim {
 		const bool host_only;
 
 		/// <param name="host_only">Whether the created circuits are only simulated on the host</param>
-		StochasticCircuitFactory(bool host_only);
+		/// <param name="force_fast_mempitch_nets">Whether fast memory pitching is forced for short simulation time spans - may increase performance, but significantly increase GPU memory usage</param>
+		/// <param name="force_fast_mempitch_components">Same as force_fast_mempitch_nets, but concerning components. May lead to performance losses if disabled</param>
+		StochasticCircuitFactory(bool host_only, bool force_fast_mempitch_nets = false, bool force_fast_mempitch_components = true);
 		~StochasticCircuitFactory();
 
 		void reset();
@@ -52,6 +59,9 @@ namespace scsim {
 
 	private:
 		friend CircuitComponent;
+
+		const bool force_fast_mempitch_nets;
+		const bool force_fast_mempitch_components;
 		
 		uint32_t sim_length;
 		uint32_t num_nets;

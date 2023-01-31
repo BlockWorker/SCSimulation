@@ -33,7 +33,8 @@ namespace scsim {
 		auto next_step_progress = next_sim_progress();
 		auto next_step_progress_word = next_sim_progress_word();
 
-		uint32_t out_word = circuit->net_values_host[out_offset + current_progress_word] >> (32 - (current_progress % 32)); //present output, shifted for seamless continuation
+		uint32_t out_word = 0;
+		if (current_progress % 32 != 0) out_word = circuit->net_values_host[out_offset + current_progress_word] >> (32 - (current_progress % 32)); //present output, shifted for seamless continuation
 
 		for (uint32_t i = current_progress_word; i < next_step_progress_word; i++) {
 			for (uint32_t j = 0; j < 32; j++) {
@@ -67,7 +68,8 @@ namespace scsim {
 		auto next_step_progress = g->next_sim_progress();
 		auto next_step_progress_word = g->next_sim_progress_word();
 
-		uint32_t out_word = g->net_values_dev[out_offset + current_progress_word] >> (32 - (current_progress % 32));
+		uint32_t out_word = 0;
+		if (current_progress % 32 != 0) g->net_values_dev[out_offset + current_progress_word] >> (32 - (current_progress % 32));
 
 		for (uint32_t i = current_progress_word; i < next_step_progress_word; i++) {
 			for (uint32_t j = 0; j < 32; j++) {

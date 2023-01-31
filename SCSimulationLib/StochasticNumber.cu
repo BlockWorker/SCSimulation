@@ -69,14 +69,13 @@ namespace scsim {
 		}
 	}
 
-	StochasticNumber::StochasticNumber(uint32_t length, const uint32_t* data, bool device_data) : data_is_internal(true), _length_ptr(&_internal_length), _external_max_length(0) {
+	StochasticNumber::StochasticNumber(uint32_t length, const uint32_t* data) : data_is_internal(true), _length_ptr(&_internal_length), _external_max_length(0) {
 		if (length == 0) throw std::runtime_error("StochasticNumber: Data-based constructor may not be used to create empty SNs");
 		_internal_length = length;
 		auto my_word_length = word_length();
 		_data = (uint32_t*)malloc(my_word_length * sizeof(uint32_t));
 		if (_data == nullptr) throw std::runtime_error("StochasticNumber: Data allocation failed");
-		if (device_data) cu(cudaMemcpy(_data, data, my_word_length * sizeof(uint32_t), cudaMemcpyDeviceToHost));
-		else memcpy(_data, data, my_word_length * sizeof(uint32_t));
+		memcpy(_data, data, my_word_length * sizeof(uint32_t));
 	}
 
 	StochasticNumber::StochasticNumber(uint32_t* data_ptr, uint32_t* length_ptr, uint32_t max_length) : data_is_internal(false), _length_ptr(length_ptr), _external_max_length(max_length) {
@@ -88,7 +87,7 @@ namespace scsim {
 		if (data_is_internal) free(_data);
 	}
 
-	StochasticNumber::StochasticNumber(const StochasticNumber& other) : StochasticNumber(other.length(), other.data(), false) {
+	StochasticNumber::StochasticNumber(const StochasticNumber& other) : StochasticNumber(other.length(), other.data()) {
 
 	}
 
@@ -129,8 +128,13 @@ namespace scsim {
 
 		auto word_length = (length + 31) / 32;
 
+		uint32_t* sn_host = nullptr;
 		uint32_t* sn_dev = nullptr;
 		size_t sn_dev_pitch = 0;
+		double* val_dev = nullptr;
+
+		cu(cudaMalloc(&val_dev, count * sizeof(double)));
+		cu(cudaMemcpy(val_dev, values_unipolar, count * sizeof(double), cudaMemcpyHostToDevice));
 
 		uint32_t max_batch = MAX_CURAND_BATCH_WORDS / word_length; //number of SNs in one batch
 
@@ -138,23 +142,36 @@ namespace scsim {
 			uint32_t batch_size = __min(count - batch_offset, max_batch);
 
 			try {
-				cu(cudaMallocPitch(&sn_dev, &sn_dev_pitch, word_length * sizeof(uint32_t), batch_size));
+				auto sn_width = word_length * sizeof(uint32_t);
+				sn_host = (uint32_t*)malloc(sn_width * batch_size);
+				if (sn_host == nullptr) {
+					cu_ignore_error(cudaFree(val_dev));
+					throw std::runtime_error("StochasticNumber generate: Host memory allocation failed");
+				}
+				cu(cudaMallocPitch(&sn_dev, &sn_dev_pitch, sn_width, batch_size));
 
-				generate_bitstreams_curand(sn_dev, sn_dev_pitch, length, values_unipolar + batch_offset, batch_size);
+				generate_bitstreams_curand(sn_dev, sn_dev_pitch, length, val_dev + batch_offset, batch_size);
 
-				//create SN objects based on device data
+				cu(cudaMemcpy2D(sn_host, sn_width, sn_dev, sn_dev_pitch, sn_width, batch_size, cudaMemcpyDeviceToHost));
+
+				//create SN objects based on generated data
 				for (size_t i = 0; i < batch_size; i++) {
-					auto data_ptr = (uint32_t*)((char*)sn_dev + (i * sn_dev_pitch));
-					numbers[batch_offset + i] = new StochasticNumber(length, data_ptr, true);
+					auto data_ptr = sn_host + (i * word_length);
+					numbers[batch_offset + i] = new StochasticNumber(length, data_ptr);
 				}
 			} catch (CudaError& error) {
+				free(sn_host);
 				cu_ignore_error(cudaFree(sn_dev));
+				cu_ignore_error(cudaFree(val_dev));
 
 				throw error;
 			}
 
+			free(sn_host);
 			cu_ignore_error(cudaFree(sn_dev));
 		}
+
+		cu_ignore_error(cudaFree(val_dev));
 	}
 
 	uint32_t StochasticNumber::length() const {
@@ -434,7 +451,7 @@ namespace scsim {
 		}
 	}
 
-	void StochasticNumber::generate_bitstreams_curand(uint32_t** outputs, uint32_t length, const double* values_unipolar, size_t count) {
+	void StochasticNumber::generate_bitstreams_curand(uint32_t** outputs, uint32_t length, const double* values_unipolar_dev, size_t count) {
 		if (length == 0) throw std::runtime_error("generate_bitstreams_curand: Length must be greater than zero.");
 		if (count == 0) throw std::runtime_error("generate_bitstreams_curand: Count must be greater than zero.");
 
@@ -445,7 +462,6 @@ namespace scsim {
 		auto gen_length = word_length * 32; //device code only produces entire words for efficiency -> this is the true number of bits generated per number
 
 		double* rand_dev = nullptr;
-		double* val_dev = nullptr;
 		uint32_t** outputs_dev = nullptr;
 
 		curandGenerator_t gen;
@@ -454,10 +470,8 @@ namespace scsim {
 
 		try {
 			cu(cudaMalloc(&rand_dev, count * gen_length * sizeof(double)));
-			cu(cudaMalloc(&val_dev, count * sizeof(double)));
 			cu(cudaMalloc(&outputs_dev, count * sizeof(uint32_t*)));
 
-			cu(cudaMemcpy(val_dev, values_unipolar, count * sizeof(double), cudaMemcpyHostToDevice));
 			cu(cudaMemcpy(outputs_dev, outputs, count * sizeof(uint32_t*), cudaMemcpyHostToDevice));
 
 			cur(curandGenerateUniformDouble(gen, rand_dev, count * gen_length)); //generate one random double for each bit to be generated
@@ -465,24 +479,22 @@ namespace scsim {
 			auto block_size = __min(word_length, 256);
 			dim3 grid_size(count, (word_length + block_size - 1) / block_size);
 
-			sngen_kern<<<grid_size, block_size>>>(rand_dev, val_dev, outputs_dev, gen_length, word_length); //generate actual SNs on device
+			sngen_kern<<<grid_size, block_size>>>(rand_dev, (double*)values_unipolar_dev, outputs_dev, gen_length, word_length); //generate actual SNs on device
 			cu_kernel_errcheck();
 		} catch (CudaError& error) {
 			cu_ignore_error(cudaFree(rand_dev));
-			cu_ignore_error(cudaFree(val_dev));
 			cu_ignore_error(cudaFree(outputs_dev));
 
 			throw error;
 		}
 
 		cu_ignore_error(cudaFree(rand_dev));
-		cu_ignore_error(cudaFree(val_dev));
 		cu_ignore_error(cudaFree(outputs_dev));
 
 		cur(curandDestroyGenerator(gen));
 	}
 
-	void StochasticNumber::generate_bitstreams_curand(uint32_t* output, size_t output_pitch, uint32_t length, const double* values_unipolar, size_t count) {
+	void StochasticNumber::generate_bitstreams_curand(uint32_t* output, size_t output_pitch, uint32_t length, const double* values_unipolar_dev, size_t count) {
 		if (length == 0) throw std::runtime_error("generate_bitstreams_curand: Length must be greater than zero.");
 		if (count == 0) throw std::runtime_error("generate_bitstreams_curand: Count must be greater than zero.");
 
@@ -495,7 +507,7 @@ namespace scsim {
 			outputs[i] = (uint32_t*)((char*)output + (i * output_pitch));
 		}
 
-		generate_bitstreams_curand(outputs, length, values_unipolar, count);
+		generate_bitstreams_curand(outputs, length, values_unipolar_dev, count);
 
 		free(outputs);
 	}
@@ -538,6 +550,7 @@ namespace scsim {
 			cu(cudaMalloc(&sum_dev, count * sizeof(uint32_t)));
 			cu(cudaMalloc(&inputs_dev, count * sizeof(uint32_t*)));
 
+			cu(cudaMemset(sum_dev, 0, count * sizeof(uint32_t)));
 			cu(cudaMemcpy(inputs_dev, inputs, count * sizeof(uint32_t*), cudaMemcpyHostToDevice));
 
 			auto block_size = __min(word_length, 1024);

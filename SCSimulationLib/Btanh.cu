@@ -65,7 +65,8 @@ namespace scsim {
 		auto next_step_progress = next_sim_progress();
 		auto next_step_progress_word = next_sim_progress_word();
 
-		uint32_t out_word = circuit->net_values_host[out_offset + current_progress_word] >> (32 - (current_progress % 32)); //present output, shifted for seamless continuation
+		uint32_t out_word = 0;
+		if (current_progress % 32 != 0) out_word = circuit->net_values_host[out_offset + current_progress_word] >> (32 - (current_progress % 32)); //present output, shifted for seamless continuation
 
 		for (uint32_t i = current_progress_word; i < next_step_progress_word; i++) {
 			uint32_t mask = 0x80000000u;
@@ -83,7 +84,7 @@ namespace scsim {
 				//add parallel counter value * 2 to state
 				uint32_t factor = 2;
 				for (uint32_t k = 0; k < input_width; k++) {
-					if (circuit->net_values_host[input_offsets_host[k] + i] & mask > 0) state[0] += factor;
+					if ((circuit->net_values_host[input_offsets_host[k] + i] & mask) > 0) state[0] += factor;
 					factor <<= 1;
 				}
 				mask >>= 1;
@@ -112,7 +113,8 @@ namespace scsim {
 		auto next_step_progress = g->next_sim_progress();
 		auto next_step_progress_word = g->next_sim_progress_word();
 
-		uint32_t out_word = g->net_values_dev[out_offset + current_progress_word] >> (32 - (current_progress % 32));
+		uint32_t out_word = 0;
+		if (current_progress % 32 != 0) g->net_values_dev[out_offset + current_progress_word] >> (32 - (current_progress % 32));
 
 		for (uint32_t i = current_progress_word; i < next_step_progress_word; i++) {
 			uint32_t mask = 0x80000000u;
@@ -130,7 +132,7 @@ namespace scsim {
 				//add parallel counter value * 2 to state
 				uint32_t factor = 2;
 				for (uint32_t k = 0; k < g->input_width; k++) {
-					if (g->net_values_dev[g->input_offsets_dev[k] + i] & mask > 0) g->state[0] += factor;
+					if ((g->net_values_dev[g->input_offsets_dev[k] + i] & mask) > 0) g->state[0] += factor;
 					factor <<= 1;
 				}
 				mask >>= 1;
@@ -143,7 +145,7 @@ namespace scsim {
 				}
 
 				out_word <<= 1;
-				putbit(out_word, g->state[0] > g->s_half); //push zero if in lower half of states, one if in upper half of states
+				putbit(out_word, g->state[0] >= g->s_half); //push zero if in lower half of states, one if in upper half of states
 			}
 			g->net_values_dev[out_offset + i] = out_word;
 			out_word = 0;

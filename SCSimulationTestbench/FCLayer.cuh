@@ -9,7 +9,7 @@ using namespace scsim;
 
 /// <summary>
 /// Fully connected layer
-/// Weight ordering: Output 1 inputs 1...n, output 2 inputs 1...n, ..., output n inputs 1...n
+/// Weight ordering (tensorflow/keras ordering): Input 1 outputs 1...n, input 2 outputs 1...n, ..., input n outputs 1...n
 /// </summary>
 class FCLayer
 {
@@ -36,17 +36,24 @@ public:
 		auto _first_countline = f.add_nets(output_size * count_width).first;
 		_first_output = f.add_nets(output_size).first;
 
+		//offset multipliers for weights, to create correct dimension ordering
+		auto weight_offset_per_input = output_size;
+		constexpr auto weight_offset_per_output = 1u;
+
 		uint32_t* counter_inputs = (uint32_t*)malloc((input_size + 1) * sizeof(uint32_t));
 		uint32_t* counter_outputs = (uint32_t*)malloc(count_width * sizeof(uint32_t));
 		if (counter_inputs == nullptr || counter_outputs == nullptr) throw std::runtime_error("FCLayer: Out of memory on initialization");
 
 		for (uint32_t i = 0; i < output_size; i++) { //neuron loop
-			auto weight_offset = i * input_size;
+			auto weight_offset_o = i * weight_offset_per_output;
+			auto counter_in_offset = i * input_size;
 			auto count_offset = i * count_width;
 
 			for (uint32_t j = 0; j < input_size; j++) { //weight multipliers / counter inputs
-				counter_inputs[j] = _first_intermediate + weight_offset + j;
-				factory_add_component(f, XnorGate, first_input + j, _first_weight + weight_offset + j, counter_inputs[j]);
+				auto weight_offset_oi = weight_offset_o + j * weight_offset_per_input;
+
+				counter_inputs[j] = _first_intermediate + counter_in_offset + j;
+				factory_add_component(f, XnorGate, first_input + j, _first_weight + weight_offset_oi, counter_inputs[j]);
 			}
 
 			counter_inputs[input_size] = _first_bias + i; //bias counter input
