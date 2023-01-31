@@ -57,7 +57,7 @@ protected:
 		return num_runs;
 	}
 
-	virtual void config_circuit(uint32_t setup, uint32_t iteration, uint32_t input, bool device) override {
+	virtual void config_circuit(uint32_t setup, uint32_t scheduler, uint32_t iteration, uint32_t input, bool device) override {
 		uint32_t iter_sim_length = min_sim_length << iteration;
 
 		if (!device) number = StochasticNumber::generate_unipolar(iter_sim_length, 0.25);
@@ -67,7 +67,7 @@ protected:
 		if (device) delete number;
 	}
 
-	virtual uint32_t get_iter_length(uint32_t setup, uint32_t iteration) {
+	virtual uint32_t get_iter_length(uint32_t setup, uint32_t scheduler, uint32_t iteration) override {
 		return min_sim_length << iteration;
 	}
 
@@ -75,7 +75,7 @@ protected:
 		ss << CSV_SEPARATOR << "Order" << CSV_SEPARATOR << min_sim_length;
 	}
 
-	virtual void post_setup(uint32_t setup, std::stringstream& ss) override {
+	virtual void post_setup(uint32_t setup, uint32_t scheduler, std::stringstream& ss) override {
 		ss << CSV_SEPARATOR << ((setup % 2 == 0) ? "Forward" : "Backward");
 	}
 

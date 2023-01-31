@@ -77,7 +77,7 @@ protected:
 		return num_iterations;
 	}
 
-	virtual void config_circuit(uint32_t setup, uint32_t iteration, uint32_t input, bool device) override {
+	virtual void config_circuit(uint32_t setup, uint32_t scheduler, uint32_t iteration, uint32_t input, bool device) override {
 		uint32_t iter_sim_length = min_sim_length << iteration;
 
 		if (!device) {
@@ -96,7 +96,7 @@ protected:
 		}
 	}
 
-	virtual uint32_t get_iter_length(uint32_t setup, uint32_t iteration) {
+	virtual uint32_t get_iter_length(uint32_t setup, uint32_t scheduler, uint32_t iteration) override {
 		return min_sim_length << iteration;
 	}
 

@@ -65,7 +65,7 @@ protected:
 		return num_runs;
 	}
 
-	virtual void config_circuit(uint32_t setup, uint32_t iteration, uint32_t input, bool device) override {
+	virtual void config_circuit(uint32_t setup, uint32_t scheduler, uint32_t iteration, uint32_t input, bool device) override {
 		uint32_t iter_sim_length = min_sim_length << iteration;
 
 		if (!device) {
@@ -97,7 +97,7 @@ protected:
 		}
 	}
 
-	virtual uint32_t get_iter_length(uint32_t setup, uint32_t iteration) {
+	virtual uint32_t get_iter_length(uint32_t setup, uint32_t scheduler, uint32_t iteration) override {
 		return min_sim_length << iteration;
 	}
 
@@ -106,7 +106,7 @@ protected:
 	}
 
 	//calculate and log RMSE of generated SN vs. expected value, RMSE of the circuit calculation itself, and total RMSE
-	virtual void post_setup(uint32_t setup, std::stringstream& ss) override {
+	virtual void post_setup(uint32_t setup, uint32_t scheduler, std::stringstream& ss) override {
 		double errsum_in = 0;
 		double errsum_out = 0;
 		double errsum_total = 0;

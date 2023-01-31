@@ -34,7 +34,7 @@ static void softmax(double* vals, size_t count) {
 class CNNTestbench : public Testbench
 {
 public:
-	CNNTestbench(uint32_t min_sim_length, uint32_t max_iter_runs, uint32_t image_count) : Testbench(1, max_iter_runs, image_count, true), min_sim_length(min_sim_length),
+	CNNTestbench(uint32_t min_sim_length, uint32_t max_iter_runs, uint32_t image_count) : Testbench(1, max_iter_runs, true), min_sim_length(min_sim_length),
 		max_iter_runs(max_iter_runs), max_sim_length(min_sim_length << (max_iter_runs - 1)), max_sim_length_words((max_sim_length + 31) / 32), image_count(image_count) {
 		cu(cudaMalloc(&image_vals_device, image_count * image_size * sizeof(double)));
 		first_in = 0;
@@ -222,7 +222,7 @@ protected:
 		if (device) cu(cudaMemcpy(circuit->net_progress_dev, circuit->net_progress_host, circuit->num_nets * sizeof(uint32_t), cudaMemcpyHostToDevice));
 	}
 
-	virtual void config_circuit(uint32_t setup, uint32_t iteration, uint32_t input, bool device) override {
+	virtual void config_circuit(uint32_t setup, uint32_t scheduler, uint32_t iteration, uint32_t input, bool device) override {
 		uint32_t iter_sim_length = min_sim_length << iteration;
 		uint32_t iter_sim_length_words = (iter_sim_length + 31) / 32;
 
@@ -260,8 +260,13 @@ protected:
 			iter_sim_length_words * sizeof(uint32_t), image_size, cudaMemcpyDeviceToHost));
 	}
 
-	virtual uint32_t get_iter_length(uint32_t setup, uint32_t iteration) {
+	virtual uint32_t get_iter_length(uint32_t setup, uint32_t scheduler, uint32_t iteration) override {
 		return min_sim_length << iteration;
+	}
+
+	virtual uint32_t get_iter_inputs(uint32_t setup, uint32_t scheduler, uint32_t iteration, bool device) override {
+		if (scheduler > 0 && device) return image_count;
+		else return __max(image_count / 10, 1);
 	}
 
 	virtual void write_additional_column_titles(std::stringstream& ss) override {
@@ -271,11 +276,11 @@ protected:
 		ss << CSV_SEPARATOR << min_sim_length;
 	}
 
-	virtual void post_input(uint32_t setup, uint32_t iteration, uint32_t input, bool device) override {
+	virtual void post_input(uint32_t setup, uint32_t scheduler, uint32_t iteration, uint32_t input, bool device) override {
 		double sc_out[64] = { 0. };
 		double final_out[10] = { 0. };
 
-		circuit->get_net_values_cuda(first_out, sc_out, 64, get_iter_length(setup, iteration), !device); //get outputs of SC network
+		circuit->get_net_values_cuda(first_out, sc_out, 64, get_iter_length(setup, scheduler, iteration), !device); //get outputs of SC network
 		for (uint32_t i = 0; i < 64; i++) sc_out[i] = 2. * sc_out[i] - 1.; //convert to bipolar values, as they are supposed to be
 		software_layer->calculate(sc_out, final_out); //calculate result of final dense layer
 
@@ -350,14 +355,14 @@ protected:
 		std::cout << "Predicting class " << prediction << " with confidence " << prediction_confidence << ", which is " << (prediction == image_labels[input] ? "RIGHT" : "WRONG") << std::endl;
 	}
 
-	virtual void post_iter(uint32_t setup, uint32_t iteration) override {
+	virtual void post_iter(uint32_t setup, uint32_t scheduler, uint32_t iteration) override {
 		accs.push_back((double)host_correct / (double)image_count);
 		accs.push_back((double)dev_correct / (double)image_count);
 		host_correct = 0;
 		dev_correct = 0;
 	}
 
-	virtual void post_setup(uint32_t setup, std::stringstream& ss) override {
+	virtual void post_setup(uint32_t setup, uint32_t scheduler, std::stringstream& ss) override {
 		for (auto acc : accs) ss << CSV_SEPARATOR << acc;
 		accs.clear();
 	}

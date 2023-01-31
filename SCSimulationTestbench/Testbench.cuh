@@ -21,14 +21,13 @@ class Testbench
 public:
 	const uint32_t num_setups;
 	const uint32_t num_iterations;
-	const uint32_t num_inputs;
 	const bool devside_config;
 
 	/// <param name="num_setups">Number of different circuit setups to test</param>
 	/// <param name="num_iterations">Number of iterations (with potentially different parameters) to run per setup</param>
 	/// <param name="num_inputs">Number of different simulation inputs per iteration</param>
 	/// <param name="devside_config">Whether simulation inputs for device are generated on device side directly (meaning no more copying is required)</param>
-	Testbench(uint32_t num_setups, uint32_t num_iterations, uint32_t num_inputs = 1, bool devside_config = false) : num_setups(num_setups), num_iterations(num_iterations), num_inputs(num_inputs),
+	Testbench(uint32_t num_setups, uint32_t num_iterations, bool devside_config = false) : num_setups(num_setups), num_iterations(num_iterations),
 		devside_config(devside_config), factory(StochasticCircuitFactory(false)) {
 		circuit = nullptr;
 	}
@@ -106,12 +105,14 @@ public:
 						double host_total_cfg_ms = 0;
 						double host_total_ms = 0;
 
-						for (uint32_t input = 0; input < num_inputs; input++) {
+						uint32_t num_inputs_host = get_iter_inputs(setup, scheduler, iteration, false);
+
+						for (uint32_t input = 0; input < num_inputs_host; input++) {
 							std::cout << "Running iteration " << iteration << " input " << input << " host" << std::endl;
 
 							auto h_cfg_start = std::chrono::steady_clock::now();
 							circuit->reset_circuit();
-							config_circuit(setup, iteration, input, false); //configure circuit for host iteration
+							config_circuit(setup, scheduler, iteration, input, false); //configure circuit for host iteration
 							auto h_cfg_end = std::chrono::steady_clock::now();
 
 							host_total_cfg_ms += std::chrono::duration_cast<std::chrono::microseconds>(h_cfg_end - h_cfg_start).count() / 1000.0;
@@ -123,25 +124,26 @@ public:
 
 							host_total_ms += std::chrono::duration_cast<std::chrono::microseconds>(h_iter_end - h_iter_start).count() / 1000.0;
 
-							post_input(setup, iteration, input, false);
+							post_input(setup, scheduler, iteration, input, false);
 						}
 
-						ss << CSV_SEPARATOR << (host_total_cfg_ms / num_inputs);
-						ss << CSV_SEPARATOR << (host_total_ms / num_inputs);
+						ss << CSV_SEPARATOR << (host_total_cfg_ms / num_inputs_host);
+						ss << CSV_SEPARATOR << (host_total_ms / num_inputs_host);
 
 						double dev_total_cfg_ms = 0;
 						double dev_total_comp_ms = 0;
 
-						uint32_t iter_length = get_iter_length(setup, iteration);
+						uint32_t iter_length = get_iter_length(setup, scheduler, iteration);
+						uint32_t num_inputs_dev = get_iter_inputs(setup, scheduler, iteration, true);
 
 						auto d_iter_start = std::chrono::steady_clock::now();
 						if (devside_config) circuit->copy_data_to_device(iter_length);
-						for (uint32_t input = 0; input < num_inputs; input++) {
+						for (uint32_t input = 0; input < num_inputs_dev; input++) {
 							std::cout << "Running iteration " << iteration << " input " << input << " device" << std::endl;
 
 							auto d_cfg_start = std::chrono::steady_clock::now();
 							circuit->reset_circuit();
-							config_circuit(setup, iteration, input, true); //configure circuit for device iteration
+							config_circuit(setup, scheduler, iteration, input, true); //configure circuit for device iteration
 							auto d_cfg_end = std::chrono::steady_clock::now();
 
 							dev_total_cfg_ms += std::chrono::duration_cast<std::chrono::microseconds>(d_cfg_end - d_cfg_start).count() / 1000.0;
@@ -156,22 +158,22 @@ public:
 							
 							dev_total_comp_ms += std::chrono::duration_cast<std::chrono::microseconds>(d_comp_end - d_comp_start).count() / 1000.0;
 
-							post_input(setup, iteration, input, true);
+							post_input(setup, scheduler, iteration, input, true);
 						}
 						if (devside_config) circuit->copy_data_from_device(iter_length);
 						auto d_iter_end = std::chrono::steady_clock::now();
 
 						ss << CSV_SEPARATOR << std::chrono::duration_cast<std::chrono::microseconds>(d_iter_end - d_iter_start).count() / 1000.0;
-						ss << CSV_SEPARATOR << (dev_total_cfg_ms / num_inputs);
-						ss << CSV_SEPARATOR << (dev_total_comp_ms / num_inputs);
+						ss << CSV_SEPARATOR << (dev_total_cfg_ms / num_inputs_dev);
+						ss << CSV_SEPARATOR << (dev_total_comp_ms / num_inputs_dev);
 
-						post_iter(setup, iteration); //run post-iteration tasks if required
+						post_iter(setup, scheduler, iteration); //run post-iteration tasks if required
 					}
 
 					//pad columns for missing iterations
 					for (uint32_t i = setup_iters; i < num_iterations; i++) ss << CSV_SEPARATOR << CSV_SEPARATOR << CSV_SEPARATOR << CSV_SEPARATOR << CSV_SEPARATOR;
 
-					post_setup(setup, ss); //run post-setup tasks if required (may write additional column values)
+					post_setup(setup, scheduler, ss); //run post-setup tasks if required (may write additional column values)
 
 					ss << "\n";
 				}
@@ -212,24 +214,29 @@ protected:
 	/// <summary>
 	/// Configure circuit for given iteration index, use "circuit" variable
 	/// </summary>
-	virtual void config_circuit(uint32_t setup, uint32_t iteration, uint32_t input, bool device) = 0;
+	virtual void config_circuit(uint32_t setup, uint32_t scheduler, uint32_t iteration, uint32_t input, bool device) = 0;
 
 	/// <returns>How many bits per net are relevant (at most)</returns>
-	virtual uint32_t get_iter_length(uint32_t setup, uint32_t iteration) = 0;
+	virtual uint32_t get_iter_length(uint32_t setup, uint32_t scheduler, uint32_t iteration) = 0;
+
+	/// <returns>How many inputs should be used for the given iteration</returns>
+	virtual uint32_t get_iter_inputs(uint32_t setup, uint32_t scheduler, uint32_t iteration, bool device) {
+		return 1;
+	}
 
 	/// <summary>
 	/// Run post-input tasks/calculations if required
 	/// </summary>
-	virtual void post_input(uint32_t setup, uint32_t iteration, uint32_t input, bool device) { }
+	virtual void post_input(uint32_t setup, uint32_t scheduler, uint32_t iteration, uint32_t input, bool device) { }
 
 	/// <summary>
 	/// Run post-iteration tasks/calculations if required
 	/// </summary>
-	virtual void post_iter(uint32_t setup, uint32_t iteration) { }
+	virtual void post_iter(uint32_t setup, uint32_t scheduler, uint32_t iteration) { }
 
 	/// <summary>
 	/// Run post-setup tasks/calculations if required, may append additional column values, each preceded by CSV_SEPARATOR
 	/// </summary>
-	virtual void post_setup(uint32_t setup, std::stringstream& ss) { }
+	virtual void post_setup(uint32_t setup, uint32_t scheduler, std::stringstream& ss) { }
 
 };
