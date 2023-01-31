@@ -33,7 +33,7 @@
     <ClInclude Include="BinaryDoubleReader.h">
       <Filter>NeuralNet</Filter>
     </ClInclude>
-    <ClInclude Include="PCBTanhTestbench.cuh" />
+    <ClInclude Include="PCBtanhTestbench.cuh" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
