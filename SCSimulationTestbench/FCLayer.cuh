@@ -19,16 +19,16 @@ public:
 	const uint32_t num_weights;
 	const uint32_t first_input;
 	const double scale_factor;
+	const uint32_t btanh_r;
 	
 	/// <param name="first_input">first input net index, must have input_size consecutive nets already available</param>
 	/// <param name="scale_factor">factor used in weight scaling, greater than or equal to 1</param>
-	FCLayer(StochasticCircuitFactory& f, uint32_t input_size, uint32_t first_input, uint32_t output_size, double scale_factor) : input_size(input_size), output_size(output_size),
-		num_weights(input_size * output_size), first_input(first_input), scale_factor(scale_factor) {
+	FCLayer(StochasticCircuitFactory& f, uint32_t input_size, uint32_t first_input, uint32_t output_size, double scale_factor, uint32_t btanh_r) : input_size(input_size), output_size(output_size),
+		num_weights(input_size * output_size), first_input(first_input), scale_factor(scale_factor), btanh_r(btanh_r) {
 
 		if (scale_factor < 1.) throw std::runtime_error("FCLayer: Invalid scale factor");
 
 		auto count_width = (uint32_t)floor(log2(input_size + 1)) + 1; //width of parallel counter output for each neuron
-		auto btanh_r = Btanh::calculate_r(input_size + 1, scale_factor);
 
 		_first_weight = f.add_nets(num_weights).first;
 		_first_bias = f.add_nets(output_size).first;

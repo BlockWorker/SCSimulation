@@ -87,7 +87,7 @@ public:
 							break;
 						case 1:
 							auto sched = new AsapScheduler();
-							std::cout << "Scheduling setup " << setup << " with scheduler " << scheduler_name << std::endl;
+							std::cout << "Scheduling setup " << setup << " with scheduler " << sched->name << std::endl;
 							schedule_start = std::chrono::steady_clock::now();
 							circuit->set_scheduler(sched);
 							schedule_end = std::chrono::steady_clock::now();

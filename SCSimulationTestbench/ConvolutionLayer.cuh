@@ -28,21 +28,21 @@ public:
 	const uint32_t first_padding_input;
 	const uint32_t padding_input_count;
 	const double scale_factor;
+	const uint32_t btanh_r;
 
 #ifdef CONVOLUTION_TEST_OUTPUTS
 	uint32_t test_neuron_indices[27 + 1 + 5 + 1] = { 0 };
 #endif
 
 	ConvolutionLayer(StochasticCircuitFactory& f, uint32_t total_width, uint32_t total_height, uint32_t input_depth, uint32_t first_input, uint32_t output_depth, uint32_t stencil_width,
-		uint32_t stencil_height, uint32_t first_padding_input, uint32_t padding_input_count, double scale_factor) : total_width(total_width), total_height(total_height),
+		uint32_t stencil_height, uint32_t first_padding_input, uint32_t padding_input_count, double scale_factor, uint32_t btanh_r) : total_width(total_width), total_height(total_height),
 		input_depth(input_depth), first_input(first_input),	output_depth(output_depth), stencil_width(stencil_width), stencil_height(stencil_height), first_padding_input(first_padding_input),
-		padding_input_count(padding_input_count), scale_factor(scale_factor), num_weights(stencil_width * stencil_height * input_depth * output_depth) {
+		padding_input_count(padding_input_count), scale_factor(scale_factor), num_weights(stencil_width * stencil_height * input_depth * output_depth), btanh_r(btanh_r) {
 
 		auto total_layer_size = total_width * total_height;
 		auto stencil_layer_size = stencil_width * stencil_height;
 		auto neuron_inputs = stencil_layer_size * input_depth; //number of inputs per neuron, excluding bias
 		auto count_width = (uint32_t)floor(log2(neuron_inputs + 1.)) + 1; //width of parallel counter output for each neuron
-		auto btanh_r = Btanh::calculate_r(neuron_inputs + 1, scale_factor);
 
 		padding_input_offset = 0;
 

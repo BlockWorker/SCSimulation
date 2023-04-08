@@ -192,7 +192,7 @@ namespace scsim {
 			}
 
 			//create node for progress calculation with the above parameters, predecessors are previous finish nodes, their count is given by the sum of the two existence bits
-			cu(cudaGraphAddKernelNode(&calcp_node, cuda_graph, prev_nodes, ((prev_nodes_existence & 1) + (prev_nodes_existence >> 1)), &node_params));
+			cu(cudaGraphAddKernelNode(&calcp_node, cuda_graph, pred_ptr, pred_count, &node_params));
 
 			//reset existence flags for nodes
 			prev_nodes_existence = 0;
@@ -269,8 +269,10 @@ namespace scsim {
 		}
 
 		cudaGraphNode_t error_node;
-		char error_log[1024];
+		char error_log[1024] = { 0 };
 		cu(cudaGraphInstantiate(&cuda_graph_exec, cuda_graph, &error_node, error_log, sizeof(error_log)));
+
+		//printf("instantiate errors: %s\n", error_log);
 
 		//cudaGraphDebugDotPrint(cuda_graph, "graph.dot", cudaGraphDebugDotFlagsVerbose | cudaGraphDebugDotFlagsKernelNodeParams | cudaGraphDebugDotFlagsKernelNodeAttributes);
 	}

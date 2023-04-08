@@ -109,14 +109,18 @@ protected:
 
 		first_in = factory.add_nets(image_size).first;
 
-		ConvolutionLayer conv1(factory, image_width, image_height, image_channels, first_in, 20, 3, 3, first_zero_pad, zero_pad_count, param_reader->get_value(0, 0));
+		ConvolutionLayer conv1(factory, image_width, image_height, image_channels, first_in, 20, 3, 3, first_zero_pad, zero_pad_count,
+			param_reader->get_value(0, 0), (uint32_t)param_reader->get_value(0, 1));
 		MaxPoolLayer pool1(factory, conv1.total_width, conv1.total_height, conv1.output_depth, conv1.first_output(), 2, 2);
-		ConvolutionLayer conv2(factory, pool1.output_width, pool1.output_height, pool1.layers, pool1.first_output(), 40, 3, 3, first_zero_pad, zero_pad_count, param_reader->get_value(2, 0));
+		ConvolutionLayer conv2(factory, pool1.output_width, pool1.output_height, pool1.layers, pool1.first_output(), 40, 3, 3, first_zero_pad, zero_pad_count,
+			param_reader->get_value(2, 0), (uint32_t)param_reader->get_value(2, 1));
 		MaxPoolLayer pool2(factory, conv2.total_width, conv2.total_height, conv2.output_depth, conv2.first_output(), 2, 2);
-		ConvolutionLayer conv3(factory, pool2.output_width, pool2.output_height, pool2.layers, pool2.first_output(), 60, 3, 3, first_zero_pad, zero_pad_count, param_reader->get_value(4, 0));
-		ConvolutionLayer conv4(factory, conv3.total_width, conv3.total_height, conv3.output_depth, conv3.first_output(), 60, 3, 3, first_zero_pad, zero_pad_count, param_reader->get_value(6, 0));
+		ConvolutionLayer conv3(factory, pool2.output_width, pool2.output_height, pool2.layers, pool2.first_output(), 60, 3, 3, first_zero_pad, zero_pad_count,
+			param_reader->get_value(4, 0), (uint32_t)param_reader->get_value(4, 1));
+		ConvolutionLayer conv4(factory, conv3.total_width, conv3.total_height, conv3.output_depth, conv3.first_output(), 60, 3, 3, first_zero_pad, zero_pad_count,
+			param_reader->get_value(6, 0), (uint32_t)param_reader->get_value(6, 1));
 		MaxPoolLayer pool3(factory, conv4.total_width, conv4.total_height, conv4.output_depth, conv4.first_output(), 2, 2);
-		FCLayer fc1(factory, pool3.output_width * pool3.output_height * pool3.layers, pool3.first_output(), 64, param_reader->get_value(8, 0));
+		FCLayer fc1(factory, pool3.output_width * pool3.output_height * pool3.layers, pool3.first_output(), 64, param_reader->get_value(8, 0), (uint32_t)param_reader->get_value(8, 1));
 
 		first_out = fc1.first_output();
 
@@ -230,7 +234,7 @@ protected:
 		if (!params_initialized) { //first run overall: generate parameter and zero padding SNs
 			//generate parameters
 			for (uint32_t i = 0; i < 10; i++) {
-				circuit->set_net_values_curand(param_start_indices[i], param_reader->get_row(i) + 1, param_counts[i], false);
+				circuit->set_net_values_curand(param_start_indices[i], param_reader->get_row(i) + 2, param_counts[i], false);
 			}
 
 			//generate zero padding
@@ -356,8 +360,8 @@ protected:
 	}
 
 	virtual void post_iter(uint32_t setup, uint32_t scheduler, uint32_t iteration) override {
-		accs.push_back((double)host_correct / (double)image_count);
-		accs.push_back((double)dev_correct / (double)image_count);
+		accs.push_back((double)host_correct / (double)get_iter_inputs(setup, scheduler, iteration, false));
+		accs.push_back((double)dev_correct / (double)get_iter_inputs(setup, scheduler, iteration, true));
 		host_correct = 0;
 		dev_correct = 0;
 	}

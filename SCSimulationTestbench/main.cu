@@ -160,7 +160,7 @@ void run(uint64_t max_mem) {
 		//*/
 		//*
 		std::cout << "**** Running CNN testbench ****" << std::endl;
-		runBench(new CNNTestbench(512, 6, 100), dir, "cnn.csv");
+		runBench(new CNNTestbench(256, 7, 100), dir, "cnn.csv");
 		//*/
 	}
 	/*
