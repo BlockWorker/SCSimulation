@@ -4,6 +4,9 @@
 #include "StochasticNumber.cuh"
 #include "BasicCombinatorial.cuh"
 
+/// <summary>
+/// Testbench simulating a lot of simple independent 8-input multiplexers. Useful for testing large-scale performance with relatively simple components (but not the simplest).
+/// </summary>
 class MuxNTestbench : public Testbench
 {
 public:

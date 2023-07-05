@@ -4,6 +4,9 @@
 #include "StochasticNumber.cuh"
 #include "BitwiseAbleComponents.cuh"
 
+/// <summary>
+/// Testbench implementing lots of small (2-component) cycles. Useful to see behaviour of a cyclic circuit.
+/// </summary>
 class CycleTestbench : public Testbench
 {
 public:

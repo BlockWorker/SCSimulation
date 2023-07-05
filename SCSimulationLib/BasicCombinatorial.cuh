@@ -7,6 +7,9 @@
 
 namespace scsim {
 
+	/// <summary>
+	/// Inverter logic gate
+	/// </summary>
 	class SCSIMAPI Inverter : public CombinatorialComponent
 	{
 	public:
@@ -20,6 +23,9 @@ namespace scsim {
 
 	};
 
+	/// <summary>
+	/// AND logic gate
+	/// </summary>
 	class SCSIMAPI AndGate : public CombinatorialComponent
 	{
 	public:
@@ -33,6 +39,9 @@ namespace scsim {
 
 	};
 
+	/// <summary>
+	/// NAND logic gate
+	/// </summary>
 	class SCSIMAPI NandGate : public CombinatorialComponent
 	{
 	public:
@@ -46,6 +55,9 @@ namespace scsim {
 
 	};
 
+	/// <summary>
+	/// OR logic gate
+	/// </summary>
 	class SCSIMAPI OrGate : public CombinatorialComponent
 	{
 	public:
@@ -59,6 +71,9 @@ namespace scsim {
 
 	};
 
+	/// <summary>
+	/// NOR logic gate
+	/// </summary>
 	class SCSIMAPI NorGate : public CombinatorialComponent
 	{
 	public:
@@ -72,6 +87,9 @@ namespace scsim {
 
 	};
 
+	/// <summary>
+	/// XOR logic gate
+	/// </summary>
 	class SCSIMAPI XorGate : public CombinatorialComponent
 	{
 	public:
@@ -85,6 +103,9 @@ namespace scsim {
 
 	};
 
+	/// <summary>
+	/// XNOR logic gate
+	/// </summary>
 	class SCSIMAPI XnorGate : public CombinatorialComponent
 	{
 	public:
@@ -98,6 +119,9 @@ namespace scsim {
 
 	};
 
+	/// <summary>
+	/// Two-input multiplexer
+	/// </summary>
 	class SCSIMAPI Multiplexer2 : public CombinatorialComponent
 	{
 	public:

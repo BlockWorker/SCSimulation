@@ -7,6 +7,9 @@
 #include "BasicCombinatorial.cuh"
 #include "Stanh.cuh"
 
+/// <summary>
+/// Testbench simulating a heavily simplified neural network (multi-layer perceptron) of varying breadth, without any useful data. Useful for testing the behaviour of slightly more complex circuits.
+/// </summary>
 class MLPLayerSizeTestbench : public Testbench
 {
 public:

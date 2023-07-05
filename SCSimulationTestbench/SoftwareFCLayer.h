@@ -5,7 +5,7 @@
 #include <functional>
 
 /// <summary>
-/// Fully connected layer in software
+/// Fully connected layer in software (not in SC / simulation)
 /// Weight ordering (tensorflow/keras ordering): Input 1 outputs 1...n, input 2 outputs 1...n, ..., input n outputs 1...n
 /// </summary>
 class SoftwareFCLayer

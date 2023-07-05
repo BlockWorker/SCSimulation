@@ -5,6 +5,10 @@
 
 using namespace scsim;
 
+/// <summary>
+/// Basic logic gates which support bitwise processing (as opposed to word-wise processing) for benchmarking purposes.
+/// </summary>
+
 bool sim_bitwise = false;
 
 class BitwiseInverter : public Inverter

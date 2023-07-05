@@ -7,6 +7,9 @@ namespace scsim {
 	class CircuitComponent;
 	class StochasticCircuit;
 
+	/// <summary>
+	/// Base class for simulation schedulers
+	/// </summary>
 	class SCSIMAPI Scheduler
 	{
 	public:

@@ -21,14 +21,15 @@
 #include "ConvolutionLayer.cuh"
 #include "MaxPoolLayer.cuh"
 
-constexpr uint32_t SIM_RUNS = 1;
+constexpr uint32_t SIM_RUNS = 1; //how many full runs of the simulation should be done
 
-constexpr uint32_t MIN_SN_LENGTH_MLP = 1 << 8;
+constexpr uint32_t MIN_SN_LENGTH_MLP = 1 << 8; //starting length of the SN bitstreams, in bits
 constexpr uint32_t MIN_SN_LENGTH = 1 << 11;
 
-constexpr uint64_t RESERVED_MEM = 1 << 29;
+constexpr uint64_t RESERVED_MEM = 1 << 29; //graphics memory in bytes that should not be occupied by circuit itself
 constexpr uint64_t MEM_PER_COMP = 512;
 
+/// <returns>Estimated number of setups possible for an exponentially growing testbench before the memory limit is reached</returns>
 uint32_t max_setups(uint64_t max_mem, uint32_t comp_per_unit, uint32_t nets_per_unit, uint32_t min_bits) {
 	uint32_t min_sim_len_words = (min_bits + 31) / 32;
 	/*if (min_sim_len_words <= 128) min_sim_len_words = 128;
@@ -38,6 +39,7 @@ uint32_t max_setups(uint64_t max_mem, uint32_t comp_per_unit, uint32_t nets_per_
 	return (uint32_t)floor(log2(max_units)) - 2;
 }
 
+/// <returns>Estimated number of setups possible for the MLP layer size testbench before the memory limit is reached</returns>
 std::pair<uint32_t, uint32_t> max_setups_nn(uint64_t max_mem, uint32_t layercount, uint32_t min_bits) {
 	uint32_t min_sim_len_words = (min_bits + 31) / 32;
 	/*if (min_sim_len_words <= 8) min_sim_len_words = 8;
@@ -67,6 +69,7 @@ std::pair<uint32_t, uint32_t> max_setups_nn(uint64_t max_mem, uint32_t layercoun
 	return std::make_pair(max_setups, max_iters);
 }
 
+/// <returns>Estimated number of setups possible for the MLP layer count testbench before the memory limit is reached</returns>
 std::pair<uint32_t, uint32_t> max_layers_nn(uint64_t max_mem, uint32_t layersize, uint32_t min_bits) {
 	uint32_t min_sim_len_words = (min_bits + 31) / 32;
 	if (min_sim_len_words <= 8) min_sim_len_words = 8;
@@ -96,6 +99,9 @@ std::pair<uint32_t, uint32_t> max_layers_nn(uint64_t max_mem, uint32_t layersize
 	return std::make_pair(max_layers, max_iters);
 }
 
+/// <summary>
+/// Run the given testbench and output its CSV data to a file
+/// </summary>
 void runBench(Testbench* bench, const char* dirname, const char* filename) {
 	auto csv = bench->run();
 
@@ -110,6 +116,9 @@ void runBench(Testbench* bench, const char* dirname, const char* filename) {
 	delete bench;
 }
 
+/// <summary>
+/// Run all enabled testbenches with the given memory limit
+/// </summary>
 void run(uint64_t max_mem) {
 	char dir[10];
 
@@ -171,7 +180,6 @@ void run(uint64_t max_mem) {
 }
 
 int main() {
-	//*
 	try {
 		cu(cudaSetDevice(0));
 		cudaDeviceProp prop;
@@ -186,54 +194,6 @@ int main() {
 	} catch (std::runtime_error& e) {
 		std::cerr << e.what() << std::endl;
 	}
-	/*/
-	try {
-		StochasticCircuitFactory f(false);
-		f.set_sim_length(2048);
-
-		auto print_max = 64;
-		auto inputs = 5;
-		auto ints = 3;
-
-		auto first_in = f.add_nets(inputs).first;
-		auto first_inter = f.add_nets(ints).first;
-		auto out = f.add_net();
-
-		auto bt_r = Btanh::calculate_r(inputs, 1.0);
-
-		factory_add_component(f, ParallelCounter, inputs, first_in, first_inter);
-		factory_add_component(f, Btanh, inputs, bt_r, first_inter, out);
-
-		auto c = f.create_circuit();
-
-		auto count = 30;
-		auto sqerrsum = 0.0;
-
-		for (uint32_t i = 0; i <= count; i++) {
-			double total = 2.0 * (double)i / (double)count - 1.0;
-			double factor = 1.0;
-			for (uint32_t j = 0; j < inputs - 1; j++) {
-				factor *= .5;
-				c->set_net_value_bipolar(first_in + j, factor * total);
-			}
-			c->set_net_value_bipolar(first_in + inputs - 1, factor * total);
-
-			c->simulate_circuit();
-
-			auto res = c->get_net_value_bipolar(out);
-			auto err = res - tanh(total);
-			sqerrsum += err * err;
-
-			std::cout << "in: " << total << " - Btanh: " << res << ", tanh: " << tanh(total) << ", error: " << err << std::endl;
-
-			c->reset_circuit();
-		}
-
-		std::cout << "rmse: " << sqrt(sqerrsum / (count + 1)) << std::endl;
-	} catch (std::runtime_error& e) {
-		std::cerr << e.what() << std::endl;
-	}
-	//*/
 
 	std::cout << "Press return to exit...";
 	std::cin.get();

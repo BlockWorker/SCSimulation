@@ -30,7 +30,21 @@ static void softmax(double* vals, size_t count) {
 	for (size_t i = 0; i < count; i++) vals[i] = exp(vals[i]) / denom;
 }
 
-
+/// <summary>
+/// Testbench which implements a complete convolutional neural network for the CIFAR-10 dataset.
+/// Structure:
+///		Conv 20x3x3 (same padding, tanh)
+///		MaxPool 2x2
+///		Conv 40x3x3 (same padding, tanh)
+///		MaxPool 2x2
+///		Conv 60x3x3 (same padding, tanh)
+///		Conv 60x3x3 (same padding, tanh)
+///		MaxPool 2x2
+///		FullyConnected 64 (tanh)
+///		FullyConnected 10 (softmax, in software / not simulated in SC)
+/// Expects file "images.dat" (binary, consecutive double values) and "weights.csv" (comma separated) in the working directory.
+/// See accompanying python script (python_ml/cnn.py) for details about the format of these files.
+/// </summary>
 class CNNTestbench : public Testbench
 {
 public:

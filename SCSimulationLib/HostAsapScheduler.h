@@ -8,6 +8,9 @@ namespace scsim {
 	class Graph;
 	class AsapScheduler;
 
+	/// <summary>
+	/// ASAP (as-soon-as-possible) simulation scheduler for host-only simulations
+	/// </summary>
 	class SCSIMAPI HostAsapScheduler : public Scheduler
 	{
 	public:

@@ -75,6 +75,7 @@ namespace scsim {
 	bool HostAsapScheduler::execute(bool host) {
 		if (!host || !is_compiled()) return false; //execution only possible on the host, and if compiled
 
+		//iterate through buckets and simulate components within those buckets
 		for (auto& bucket : schedule_buckets) {
 			for (auto index : bucket) {
 				auto comp = circuit->components_host[index];

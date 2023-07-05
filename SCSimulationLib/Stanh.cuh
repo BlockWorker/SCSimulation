@@ -6,7 +6,9 @@
 
 namespace scsim {
 
-	//Stochastic tanh function
+	/// <summary>
+	/// Stochastic tanh function (Brown and Card, 2001)
+	/// </summary>
 	class SCSIMAPI Stanh : public SequentialComponent<1>
 	{
 	public:

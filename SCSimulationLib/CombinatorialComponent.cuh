@@ -6,6 +6,9 @@
 
 namespace scsim {
 
+	/// <summary>
+	/// Base class for combinatorial (i.e. stateless) circuit components
+	/// </summary>
 	class SCSIMAPI CombinatorialComponent : public CircuitComponent
 	{
 	public:

@@ -6,7 +6,9 @@
 
 namespace scsim {
 
-	//Linear feedback shift register
+	/// <summary>
+	/// Linear feedback shift register
+	/// </summary>
 	class SCSIMAPI LFSR : public SequentialComponent<1>
 	{
 	public:

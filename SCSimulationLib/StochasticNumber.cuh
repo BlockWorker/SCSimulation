@@ -11,6 +11,9 @@ namespace scsim {
 	class StochasticCircuit;
 	class StochasticCircuitFactory;
 
+	/// <summary>
+	/// Class representing a stochastic number/bitstream - either in an internal buffer, or as part of an external buffer
+	/// </summary>
 	class SCSIMAPI StochasticNumber
 	{
 	public:

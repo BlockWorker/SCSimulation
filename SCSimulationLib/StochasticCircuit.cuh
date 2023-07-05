@@ -10,6 +10,10 @@ namespace scsim {
 	class StochasticCircuitFactory;
 	class Scheduler;
 
+	/// <summary>
+	/// Class representing a stochastic circuit (essentially a graph of nets and components with their states).
+	/// Don't try to instantiate this directly - use StochasticCircuitFactory to build circuits instead.
+	/// </summary>
 	class SCSIMAPI StochasticCircuit
 	{
 	public:

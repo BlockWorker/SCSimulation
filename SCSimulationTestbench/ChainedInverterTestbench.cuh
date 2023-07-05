@@ -4,6 +4,9 @@
 #include "StochasticNumber.cuh"
 #include "BasicCombinatorial.cuh"
 
+/// <summary>
+/// Testbench which simulates a long chain of inverters, with different component orderings. Tests behaviour of circuits with high depth.
+/// </summary>
 class ChainedInverterTestbench : public Testbench
 {
 public:

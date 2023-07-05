@@ -6,7 +6,9 @@
 
 namespace scsim {
 
-	//Stochastic tanh function, following parallel counter (Kim et al., 2016)
+	/// <summary>
+	/// Stochastic tanh function, following parallel counter (Kim et al., 2016)
+	/// </summary>
 	class SCSIMAPI Btanh : public SequentialComponent<1>
 	{
 	public:
@@ -33,7 +35,7 @@ namespace scsim {
 
 		/// <param name="n">Number of parallel counter inputs</param>
 		/// <param name="s">Desired value of s where Btanh(n, r, t) ~= tanh(t/s), as in paper</param>
-		/// <returns>Optimal value of the parameter r for the given values</returns>
+		/// <returns>"Optimal" value of the parameter r for the given values (according to paper, often not actually optimal)</returns>
 		static uint32_t calculate_r(uint32_t n, double s);
 
 		decl_device_statics()

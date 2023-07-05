@@ -4,6 +4,9 @@
 #include "StochasticNumber.cuh"
 #include "Stanh.cuh"
 
+/// <summary>
+/// Testbench simulating several independent Stanh units. Useful for testing the simulation behaviour of Stanh.
+/// </summary>
 class StanhTestbench : public Testbench
 {
 public:

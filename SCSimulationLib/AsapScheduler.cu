@@ -47,6 +47,7 @@ namespace scsim {
 		cudaGraphExecDestroy(cuda_graph_exec);
 	}
 
+	//device-side kernel for calculating simulation progress
 	__global__ void asap_calc_sim_progress(CircuitComponent** components, uint32_t* indices_comb, uint32_t count_comb, uint32_t* indices_seq, uint32_t count_seq) {
 		auto comp = blockIdx.x * blockDim.x + threadIdx.x;
 		if (comp < count_comb) components[indices_comb[comp]]->calculate_simulation_progress_dev();
@@ -62,7 +63,7 @@ namespace scsim {
 
 	void AsapScheduler::compile(StochasticCircuit* circuit) {
 		this->circuit = circuit;
-		host_scheduler->compile(circuit);
+		host_scheduler->compile(circuit); //start by compiling the host scheduler (handles the actual ASAP scheduling logic)
 
 		std::vector<uint32_t> sim_comb;
 		std::vector<uint32_t> comb_type_counts;
@@ -160,6 +161,7 @@ namespace scsim {
 		for (auto& info : bucket_info) { //process buckets, second round: generate cuda graph
 			auto sequential_count = info.total_count - info.combinatorial_count;
 
+			//prepare progress calculation node
 			uint32_t block_size_calcp = __min(info.total_count, 256);
 			node_params.blockDim = dim3(block_size_calcp);
 			node_params.gridDim = dim3((info.total_count + block_size_calcp - 1) / block_size_calcp);

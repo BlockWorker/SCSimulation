@@ -4,6 +4,9 @@
 #include "StochasticNumber.cuh"
 #include "BitwiseAbleComponents.cuh"
 
+/// <summary>
+/// Testbench simulating a lot of simple independent inverters. Useful for testing simplest-case large-scale performance.
+/// </summary>
 class InverterTestbench : public Testbench
 {
 public:

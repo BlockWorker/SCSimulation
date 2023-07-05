@@ -4,6 +4,9 @@
 #include "StochasticNumber.cuh"
 #include "BitwiseAbleComponents.cuh"
 
+/// <summary>
+/// Testbench simulating a lot of independent squarers (multiplier with delay on one input). Useful for testing simple circuits with a delay element.
+/// </summary>
 class SquarerTestbench : public Testbench
 {
 public:

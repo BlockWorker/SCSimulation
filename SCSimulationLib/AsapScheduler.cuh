@@ -6,6 +6,9 @@ namespace scsim {
 
 	class HostAsapScheduler;
 
+	/// <summary>
+	/// ASAP (as-soon-as-possible) simulation scheduler, supporting host-only and device-assisted simulations
+	/// </summary>
 	class SCSIMAPI AsapScheduler : public Scheduler
 	{
 	public:

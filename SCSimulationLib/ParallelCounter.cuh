@@ -8,7 +8,7 @@
 namespace scsim {
 
 	/// <summary>
-	/// Parallel Counter
+	/// (Exact) Parallel Counter
 	/// </summary>
 	class SCSIMAPI ParallelCounter : public CombinatorialComponent
 	{

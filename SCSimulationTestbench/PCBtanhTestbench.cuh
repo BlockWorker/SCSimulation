@@ -5,6 +5,9 @@
 #include "ParallelCounter.cuh"
 #include "Btanh.cuh"
 
+/// <summary>
+/// Testbench simulating several independent ParallelCounter-Btanh units. Useful for testing the simulation behaviour of Btanh.
+/// </summary>
 class PCBtanhTestbench : public Testbench
 {
 public:

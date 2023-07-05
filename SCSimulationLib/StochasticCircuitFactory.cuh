@@ -4,9 +4,11 @@
 #include <vector>
 #include "library_export.h"
 
+//Define this constant to disable actual circuit creation, outputting memory requirements instead (for debug purposes). Should be left undefined for normal use.
 #undef ALLOCSIZETEST
 //#define ALLOCSIZETEST
 
+//Threshold for array row size, in bytes, at which point cudaMallocPitch is used (for better performance). Setting this lower may increase GPU memory usage.
 #define FAST_MEMPITCH_THRESHOLD 512
 
 namespace scsim {
@@ -19,6 +21,9 @@ namespace scsim {
 	template<size_t state_size>
 	class SequentialComponent;
 
+	/// <summary>
+	/// Factory class used for building stochastic circuits for simulation, encapsulated in StochasticCircuit objects.
+	/// </summary>
 	class SCSIMAPI StochasticCircuitFactory
 	{
 	public:
@@ -30,8 +35,12 @@ namespace scsim {
 		StochasticCircuitFactory(bool host_only, bool force_fast_mempitch_nets = false, bool force_fast_mempitch_components = true);
 		~StochasticCircuitFactory();
 
+		/// <summary>
+		/// Reset the factory for creating a new circuit.
+		/// </summary>
 		void reset();
 
+		/// <returns>Complete StochasticCircuit object, constructed as specified in this factory beforehand</returns>
 		StochasticCircuit* create_circuit();
 
 		/// <param name="sim_length">Desired simulation time span in bit times</param>

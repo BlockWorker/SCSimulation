@@ -5,6 +5,7 @@
 #include "ParallelCounter.cuh"
 #include "Btanh.cuh"
 
+//Define this for some debug outputs about convolution calculation internals. Should be undefined for normal operation.
 #undef CONVOLUTION_TEST_OUTPUTS
 //#define CONVOLUTION_TEST_OUTPUTS
 

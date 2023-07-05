@@ -6,6 +6,9 @@
 
 namespace scsim {
 
+	/// <summary>
+	/// Base class for sequential (i.e. stateful) circuit components
+	/// </summary>
 	/// <param name="state_size">Size of internal state in 32-bit words</param>
 	template<size_t state_size>
 	class SCSIMAPI SequentialComponent : public CircuitComponent

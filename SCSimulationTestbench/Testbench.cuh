@@ -14,7 +14,7 @@ constexpr char CSV_SEPARATOR = ';'; //separator for CSV values
 constexpr char CSV_DECIMAL_SEP = ','; //CSV decimal point/separator
 
 /// <summary>
-/// Simulates component setups in different conditions and outputs results in CSV format
+/// Base class for different test benches. Simulates component setups in different conditions and outputs results in CSV format
 /// </summary>
 class Testbench
 {

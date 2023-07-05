@@ -21,6 +21,9 @@ namespace scsim {
 	class StochasticCircuit;
 	class StochasticCircuitFactory;
 
+	/// <summary>
+	/// Base class for circuit components of any type (logic gates etc.)
+	/// </summary>
 	class SCSIMAPI CircuitComponent
 	{
 	public:

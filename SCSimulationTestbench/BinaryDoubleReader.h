@@ -13,9 +13,9 @@ public:
 	const std::string filename;
 
 	/// <summary>
-	/// Read and parse the given CSV file into memory, for easy access from this object.
+	/// Read and parse the given file into memory, for easy access from this object.
 	/// </summary>
-	/// <param name="filename">Path to the CSV file</param>
+	/// <param name="filename">Path to the binary file</param>
 	/// <param name="max_values">Maximum number of double values to read, 0 means no limit</param>
 	BinaryDoubleReader(std::string filename, size_t max_values = 0);
 	~BinaryDoubleReader();
